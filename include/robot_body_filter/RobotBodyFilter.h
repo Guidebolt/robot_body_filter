@@ -1,16 +1,6 @@
 #ifndef ROBOT_BODY_FILTER_ROBOTSELFFILTER_H_
 #define ROBOT_BODY_FILTER_ROBOTSELFFILTER_H_
 
-#include "robot_body_filter/utils/tf2_sensor_msgs.h"
-#include <memory>
-#include <mutex>
-#include <sensor_msgs/msg/detail/point_cloud2__struct.hpp>
-#include <set>
-#include <shape_msgs/msg/detail/solid_primitive__struct.hpp>
-#include <string>
-#include <thread>
-#include <utility>
-
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
@@ -19,7 +9,8 @@
 #include <filters/filter_base.hpp>
 // #include <ros/ros.h>
 // #include <dynamic_reconfigure/Config.h>
-// #include <geometric_shapes/mesh_operations.h>
+#include <geometric_shapes/body_operations.h>
+#include <geometric_shapes/mesh_operations.h>
 // #include <geometry_msgs/Point32.h>
 // #include <geometry_msgs/PointStamped.h>
 // #include <geometry_msgs/PolygonStamped.h>
@@ -27,16 +18,16 @@
 // #include <geometry_msgs/msg/detail/point_stamped__struct.hpp>
 // #include <geometry_msgs/msg/detail/polygon_stamped__struct.hpp>
 #include <laser_geometry/laser_geometry.hpp>
-// #include <moveit/occupancy_map_monitor/occupancy_map_updater.h>
-// #include <moveit/robot_model/aabb.h>
+#include <moveit/occupancy_map_monitor/occupancy_map_updater.h>
+#include <moveit/robot_model/aabb.h>
 #include <rclcpp/rclcpp.hpp>
 // #include <robot_body_filter/OrientedBoundingBoxStamped.h>
 #include <robot_body_filter/RayCastingShapeMask.h>
 // #include <robot_body_filter/SphereStamped.h>
-// #include <robot_body_filter/utils/filter_utils.hpp>
-// #include <robot_body_filter/utils/tf2_sensor_msgs.h>
+#include <robot_body_filter/utils/filter_utils.hpp>
+#include <robot_body_filter/utils/tf2_sensor_msgs.h>
 #include <sensor_msgs/msg/laser_scan.hpp>
-#include <std_srvs/srv/trigger.hpp>
+// #include <std_srvs/srv/trigger.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <urdf/model.h>

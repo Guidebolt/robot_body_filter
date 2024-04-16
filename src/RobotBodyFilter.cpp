@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "robot_body_filter/RobotBodyFilter.h"
+#include "robot_body_filter/utils/obb.hpp"
 
 // #include "pluginlib/class_list_macros.h"
 
@@ -29,7 +30,7 @@
 #include <robot_body_filter/utils/shapes.h>
 #include <robot_body_filter/utils/string_utils.hpp>
 #include <robot_body_filter/utils/tf2_eigen.h>
-// #include <robot_body_filter/utils/tf2_sensor_msgs.h>
+#include <robot_body_filter/utils/tf2_sensor_msgs.h>
 #include <robot_body_filter/utils/time_utils.hpp>
 #include <robot_body_filter/utils/urdf_eigen.hpp>
 
@@ -876,8 +877,8 @@ bool RobotBodyFilterLaserScan::update(
     { // remove invalid points
       const float INVALID_POINT_VALUE = std::numeric_limits<float>::quiet_NaN();
       try {
-        sensor_msgs::msg::PointCloud2Iterator<int> indexIt(projectedPointCloud,
-                                                           "index");
+        sensor_msgs::PointCloud2Iterator<int> indexIt(projectedPointCloud,
+                                                      "index");
 
         size_t indexInScan;
         for (const auto maskValue : pointMask) {
@@ -1203,7 +1204,7 @@ void RobotBodyFilter<T>::updateTransformCache(
 }
 
 template <typename T>
-void RobotBodyFilter<T>::addRobotMaskFromUrdf(const string &urdfModel) {
+void RobotBodyFilter<T>::addRobotMaskFromUrdf(const std::string &urdfModel) {
   if (urdfModel.empty()) {
     RCLCPP_ERROR(nodeHandle.get_logger(),
                  "RobotBodyFilter: Empty string passed as robot model to "
@@ -1709,7 +1710,7 @@ void RobotBodyFilter<T>::computeAndPublishBoundingBox(
       pcl::PCLPointCloud2 pclOutput;
       cropBox.filter(pclOutput);
 
-      sensor_msgs::msg::PointCloud2Ptr boxFilteredCloud(
+      sensor_msgs::msg::PointCloud2::Ptr boxFilteredCloud(
           new sensor_msgs::msg::PointCloud2());
       pcl_conversions::moveFromPCL(pclOutput, *boxFilteredCloud);
       boxFilteredCloud->header.stamp =

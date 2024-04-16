@@ -41,6 +41,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
         std_msgs
         tf2
         tf2_ros
+        tf2_msgs
         urdf
         visualization_msgs
         pcl_conversions
@@ -72,6 +73,14 @@ target_include_directories(${PROJECT_NAME}_filter
         $<INSTALL_INTERFACE:include>
         ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
+
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/OrientedBoundingBox.msg"
+  "msg/OrientedBoundingBoxStamped.msg"
+  DEPENDENCIES builtin_interfaces std_msgs geometry_msgs std_srvs tf2_msgs tf2_sensor_msgs tf2_ros tf2_eigen visualization_msgs
+ )
 
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()
