@@ -21,11 +21,11 @@
 #include <geometry_msgs/msg/detail/point32__struct.hpp>
 #include <geometry_msgs/msg/detail/point_stamped__struct.hpp>
 #include <geometry_msgs/msg/detail/polygon_stamped__struct.hpp>
-#include <laser_geometry/laser_geometry.h>
+#include <laser_geometry/laser_geometry.hpp>
 #include <moveit/occupancy_map_monitor/occupancy_map_updater.h>
 #include <moveit/robot_model/aabb.h>
 #include <rclcpp/rclcpp.hpp>
-#include <robot_body_filter/OrientedBoundingBoxStamped.h>
+// #include <robot_body_filter/OrientedBoundingBoxStamped.h>
 #include <robot_body_filter/RayCastingShapeMask.h>
 #include <robot_body_filter/SphereStamped.h>
 #include <robot_body_filter/utils/filter_utils.hpp>
