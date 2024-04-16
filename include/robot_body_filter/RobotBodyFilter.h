@@ -1,9 +1,12 @@
 #ifndef ROBOT_BODY_FILTER_ROBOTSELFFILTER_H_
 #define ROBOT_BODY_FILTER_ROBOTSELFFILTER_H_
 
+#include "robot_body_filter/utils/tf2_sensor_msgs.h"
 #include <memory>
 #include <mutex>
+#include <sensor_msgs/msg/detail/point_cloud2__struct.hpp>
 #include <set>
+#include <shape_msgs/msg/detail/solid_primitive__struct.hpp>
 #include <string>
 #include <thread>
 #include <utility>
@@ -37,6 +40,7 @@
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <urdf/model.h>
+#include <visualization_msgs/msg/detail/marker__struct.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
 #include <robot_body_filter/TfFramesWatchdog.h>
@@ -97,8 +101,7 @@ static const std::string BBOX_SUFFIX = "::bounding_box";
  *
  * \author Martin Pecka
  */
-template <typename T>
-class RobotBodyFilter : public filters::FilterBase<T> {
+template <typename T> class RobotBodyFilter : public filters::FilterBase<T> {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -111,7 +114,7 @@ public:
 
   bool update(const T &data_in, T &data_out) override = 0;
 
-protected:
+  // protected:
   //! Handle of the node this filter runs in.
   rclcpp::Node nodeHandle;
   rclcpp::Node privateNodeHandle;
@@ -231,46 +234,72 @@ protected:
 
   //! Publisher of robot bounding sphere (relative to fixed frame).
   // ros::Publisher boundingSpherePublisher;
+  // They use a custom msg type, we can just use an unstamped std shape_msg for
+  // simplicity
+  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+      boundingSpherePublisher;
   // //! Publisher of robot bounding box (relative to fixed frame).
-  // ros::Publisher boundingBoxPublisher;
+  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+      boundingBoxPublisher;
   // //! Publisher of robot bounding box (relative to fixed frame).
-  // ros::Publisher orientedBoundingBoxPublisher;
+  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+      orientedBoundingBoxPublisher;
   // //! Publisher of robot bounding box (relative to defined local frame).
-  // ros::Publisher localBoundingBoxPublisher;
+  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+      localBoundingBoxPublisher;
   // //! Publisher of the bounding sphere marker.
-  // ros::Publisher boundingSphereMarkerPublisher;
+  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+      boundingSphereMarkerPublisher;
   // //! Publisher of the bounding box marker.
-  // ros::Publisher boundingBoxMarkerPublisher;
+  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+      boundingBoxMarkerPublisher;
   // //! Publisher of the oriented bounding box marker.
-  // ros::Publisher orientedBoundingBoxMarkerPublisher;
-  // //! Publisher of the local bounding box marker.
-  // ros::Publisher localBoundingBoxMarkerPublisher;
-  // //! Publisher of the debug bounding box markers.
-  // ros::Publisher boundingBoxDebugMarkerPublisher;
-  // //! Publisher of the debug oriented bounding box markers.
-  // ros::Publisher orientedBoundingBoxDebugMarkerPublisher;
-  // //! Publisher of the debug local bounding box markers.
-  // ros::Publisher localBoundingBoxDebugMarkerPublisher;
-  // //! Publisher of the debug bounding sphere markers.
-  // ros::Publisher boundingSphereDebugMarkerPublisher;
+  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+      orientedBoundingBoxMarkerPublisher;
+  //! Publisher of the local bounding box marker.
+  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+      localBoundingBoxMarkerPublisher;
+  //! Publisher of the debug bounding box markers.
+  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+      boundingBoxDebugMarkerPublisher;
+  //! Publisher of the debug oriented bounding box markers.
+  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+      orientedBoundingBoxDebugMarkerPublisher;
+  //! Publisher of the debug local bounding box markers.
+  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+      localBoundingBoxDebugMarkerPublisher;
+  //! Publisher of the debug bounding sphere markers.
+  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+      boundingSphereDebugMarkerPublisher;
 
-  // //! Publisher of scan_point_cloud with robot bounding box cut out.
-  // ros::Publisher scanPointCloudNoBoundingBoxPublisher;
-  // //! Publisher of scan_point_cloud with robot oriented bounding box cut out.
-  // ros::Publisher scanPointCloudNoOrientedBoundingBoxPublisher;
-  // //! Publisher of scan_point_cloud with robot local bounding box cut out.
-  // ros::Publisher scanPointCloudNoLocalBoundingBoxPublisher;
-  // //! Publisher of scan_point_cloud with robot bounding sphere cut out.
-  // ros::Publisher scanPointCloudNoBoundingSpherePublisher;
-  // ros::Publisher debugPointCloudInsidePublisher;
-  // ros::Publisher debugPointCloudClipPublisher;
-  // ros::Publisher debugPointCloudShadowPublisher;
-  // ros::Publisher debugContainsMarkerPublisher;
-  // ros::Publisher debugShadowMarkerPublisher;
-  // ros::Publisher debugBsphereMarkerPublisher;
-  // ros::Publisher debugBboxMarkerPublisher;
+  //! Publisher of scan_point_cloud with robot bounding box cut out.
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+      scanPointCloudNoBoundingBoxPublisher;
+  //! Publisher of scan_point_cloud with robot oriented bounding box cut out.
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+      scanPointCloudNoOrientedBoundingBoxPublisher;
+  //! Publisher of scan_point_cloud with robot local bounding box cut out.
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+      scanPointCloudNoLocalBoundingBoxPublisher;
+  //! Publisher of scan_point_cloud with robot bounding sphere cut out.
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+      scanPointCloudNoBoundingSpherePublisher;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+      debugPointCloudInsidePublisher;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+      debugPointCloudClipPublisher;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+      debugPointCloudShadowPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
+      debugContainsMarkerPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
+      debugShadowMarkerPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
+      debugBsphereMarkerPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
+      debugBboxMarkerPublisher;
 
-  //! Service server for reloading robot model.
+  // ! Service server for reloading robot model.
   // ros::ServiceServer reloadRobotModelServiceServer;
 
   //! Whether to compute bounding sphere of the robot.
@@ -424,8 +453,9 @@ protected:
    * \param afterScantime The after scan time to get transforms for (if zero
    * time is passed, after scan transforms are not computed).
    */
-  void updateTransformCache(const rclcpp::Time &time,
-                            const rclcpp::Time &afterScanTime = rclcpp::Time(0));
+  void
+  updateTransformCache(const rclcpp::Time &time,
+                       const rclcpp::Time &afterScanTime = rclcpp::Time(0));
 
   /**
    * \brief Callback handling update of the robot_description parameter using
@@ -433,7 +463,8 @@ protected:
    *
    * \param newConfig The updated config.
    */
-  // void robotDescriptionUpdated(dynamic_reconfigure::ConfigConstPtr newConfig);
+  // void robotDescriptionUpdated(dynamic_reconfigure::ConfigConstPtr
+  // newConfig);
 
   /**
    * \brief Callback for ~reload_model service. Reloads the URDF from parameter.
@@ -505,7 +536,7 @@ private:
 };
 
 class RobotBodyFilterLaserScan
-    : public filters::FilterBase<sensor_msgs::msg::LaserScan> {
+    : public RobotBodyFilter<sensor_msgs::msg::LaserScan> {
 public:
   //! Apply the filter.
   bool update(const sensor_msgs::msg::LaserScan &inputScan,
@@ -518,12 +549,12 @@ protected:
 
   // in RobotBodyFilterLaserScan::update we project the scan to a pointcloud
   // with viewpoints
-  // const std::unordered_map<std::string, CloudChannelType> channelsToTransform{
-  //     {"vp_", CloudChannelType::POINT}};
+  const std::unordered_map<std::string, CloudChannelType> channelsToTransform{
+      {"vp_", CloudChannelType::POINT}};
 };
 
 class RobotBodyFilterPointCloud2
-    : public filters::FilterBase<sensor_msgs::msg::PointCloud2> {
+    : public RobotBodyFilter<sensor_msgs::msg::PointCloud2> {
 public:
   //! Apply the filter.
   bool update(const sensor_msgs::msg::PointCloud2 &inputCloud,
@@ -535,7 +566,7 @@ protected:
   /** \brief Frame into which the output data should be transformed. */
   std::string outputFrame;
 
-  // std::unordered_map<std::string, CloudChannelType> channelsToTransform;
+  std::unordered_map<std::string, CloudChannelType> channelsToTransform;
 };
 
 } // namespace robot_body_filter

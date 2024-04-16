@@ -13,7 +13,7 @@ namespace robot_body_filter {
  * @return The remaining time, or zero duration if the time is negative or ROS
  * time isn't initialized.
  */
-ros::Duration remainingTime(const ros::Time &query, double timeout);
+rclcpp::Duration remainingTime(const rclcpp::Time &query, double timeout);
 
 /**
  * @brief remainingTime Return remaining time to timeout from the query time.
@@ -22,8 +22,8 @@ ros::Duration remainingTime(const ros::Time &query, double timeout);
  * @return The remaining time, or zero duration if the time is negative or ROS
  * time isn't initialized.
  */
-ros::Duration remainingTime(const ros::Time &query,
-                            const ros::Duration &timeout);
+rclcpp::Duration remainingTime(const rclcpp::Time &query,
+                            const rclcpp::Duration &timeout);
 
 }; // namespace robot_body_filter
 
