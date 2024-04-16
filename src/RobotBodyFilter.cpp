@@ -37,7 +37,10 @@
 namespace robot_body_filter {
 
 template <typename T>
-RobotBodyFilter<T>::RobotBodyFilter() : privateNodeHandle("~") {
+RobotBodyFilter<T>::RobotBodyFilter()
+    : privateNodeHandle("~"), nodeHandle("robot_body_filter"),
+      modelPoseUpdateInterval(0, 0), reachableTransformTimeout(0, 0),
+      unreachableTransformTimeout(0, 0), tfBufferLength(0, 0) {
   this->modelMutex.reset(new std::mutex());
 }
 
@@ -55,15 +58,37 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
     // data)
     this->tfBuffer->clear();
   }
-
-  // this->fixedFrame = this->getParamVerbose("frames/fixed", "base_link");
-  // stripLeadingSlash(this->fixedFrame, true);
-  // this->sensorFrame = this->getParamVerbose("frames/sensor", "");
-  // stripLeadingSlash(this->sensorFrame, true);
-  // this->filteringFrame = this->getParamVerbose("frames/filtering",
-  // this->fixedFrame); stripLeadingSlash(this->filteringFrame, true);
-  // this->minDistance = this->getParamVerbose("sensor/min_distance", 0.0, "m");
-  // this->maxDistance = this->getParamVerbose("sensor/max_distance", 0.0, "m");
+  {
+    auto param_desc = rcl_interfaces::msg::ParameterDescriptor{};
+    param_desc.description = "frames/fixed";
+    this->nodeHandle.declare_parameter("fixedFrame", "base_link", param_desc);
+    this->nodeHandle.get_parameter("fixedFrame", this->fixedFrame);
+    stripLeadingSlash(this->fixedFrame, true);
+  }
+  {
+    auto param_desc = rcl_interfaces::msg::ParameterDescriptor{};
+    param_desc.description = "frames/sensor";
+    this->nodeHandle.declare_parameter("sensorFrame", "", param_desc);
+    this->nodeHandle.get_parameter("sensorFrame", this->sensorFrame);
+    stripLeadingSlash(this->sensorFrame, true);
+  }
+  {
+    auto param_desc = rcl_interfaces::msg::ParameterDescriptor{};
+    param_desc.description = "frames/filtering";
+    this->nodeHandle.declare_parameter("filteringFrame", this->fixedFrame,
+                                       param_desc);
+    this->nodeHandle.get_parameter("filteringFrame", this->filteringFrame);
+    stripLeadingSlash(this->sensorFrame, true);
+  }
+  {
+    auto param_desc = rcl_interfaces::msg::ParameterDescriptor{};
+    param_desc.description = "m";
+    param_desc.type = rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE;
+    this->nodeHandle.declare_parameter("minDistance", 0.0, param_desc);
+    this->nodeHandle.get_parameter("minDistance", this->minDistance);
+    this->nodeHandle.declare_parameter("maxDistance", 0.0, param_desc);
+    this->nodeHandle.get_parameter("maxDistance", this->maxDistance);
+  }
   // this->robotDescriptionParam =
   // this->getParamVerbose("body_model/robot_description_param",
   // "robot_description"); this->keepCloudsOrganized =
@@ -2196,7 +2221,7 @@ bool ScaleAndPadding::operator!=(const ScaleAndPadding &other) const {
 
 #include <pluginlib/class_list_macros.hpp>
 
-// PLUGINLIB_EXPORT_CLASS(robot_body_filter::RobotBodyFilterLaserScan,
-//                        filters::FilterBase<sensor_msgs::msg::LaserScan>)
-// PLUGINLIB_EXPORT_CLASS(robot_body_filter::RobotBodyFilterPointCloud2,
-//                        filters::FilterBase<sensor_msgs::msg::PointCloud2>)
+PLUGINLIB_EXPORT_CLASS(robot_body_filter::RobotBodyFilterLaserScan,
+                       filters::FilterBase<sensor_msgs::msg::LaserScan>)
+PLUGINLIB_EXPORT_CLASS(robot_body_filter::RobotBodyFilterPointCloud2,
+                       filters::FilterBase<sensor_msgs::msg::PointCloud2>)
