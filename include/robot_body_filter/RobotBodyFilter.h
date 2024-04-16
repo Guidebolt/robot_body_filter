@@ -4,6 +4,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+#include <geometry_msgs/msg/polygon_stamped.hpp>
 #include <pcl/filters/crop_box.h>
 
 #include <filters/filter_base.hpp>
@@ -24,10 +25,10 @@
 // #include <robot_body_filter/OrientedBoundingBoxStamped.h>
 #include <robot_body_filter/RayCastingShapeMask.h>
 // #include <robot_body_filter/SphereStamped.h>
-#include <robot_body_filter/utils/filter_utils.hpp>
+// #include <robot_body_filter/utils/filter_utils.hpp>
 #include <robot_body_filter/utils/tf2_sensor_msgs.h>
 #include <sensor_msgs/msg/laser_scan.hpp>
-// #include <std_srvs/srv/trigger.hpp>
+#include <std_srvs/srv/trigger.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <urdf/model.h>
@@ -230,37 +231,37 @@ public:
   rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
       boundingSpherePublisher;
   // //! Publisher of robot bounding box (relative to fixed frame).
-  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
       boundingBoxPublisher;
   // //! Publisher of robot bounding box (relative to fixed frame).
   rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
       orientedBoundingBoxPublisher;
   // //! Publisher of robot bounding box (relative to defined local frame).
-  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
       localBoundingBoxPublisher;
   // //! Publisher of the bounding sphere marker.
-  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
       boundingSphereMarkerPublisher;
   // //! Publisher of the bounding box marker.
-  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
       boundingBoxMarkerPublisher;
   // //! Publisher of the oriented bounding box marker.
-  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
       orientedBoundingBoxMarkerPublisher;
   //! Publisher of the local bounding box marker.
-  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
       localBoundingBoxMarkerPublisher;
   //! Publisher of the debug bounding box markers.
-  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
       boundingBoxDebugMarkerPublisher;
   //! Publisher of the debug oriented bounding box markers.
-  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
       orientedBoundingBoxDebugMarkerPublisher;
   //! Publisher of the debug local bounding box markers.
-  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
       localBoundingBoxDebugMarkerPublisher;
   //! Publisher of the debug bounding sphere markers.
-  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
       boundingSphereDebugMarkerPublisher;
 
   //! Publisher of scan_point_cloud with robot bounding box cut out.
@@ -281,13 +282,13 @@ public:
       debugPointCloudClipPublisher;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
       debugPointCloudShadowPublisher;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
       debugContainsMarkerPublisher;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
       debugShadowMarkerPublisher;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
       debugBsphereMarkerPublisher;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
       debugBboxMarkerPublisher;
 
   // ! Service server for reloading robot model.

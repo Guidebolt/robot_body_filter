@@ -84,7 +84,7 @@ std::string removeSuffix(const std::string& str, const std::string& suffix, bool
 template<typename T>
 inline std::string to_string(const T &value)
 {
-  return std::to_string(value);
+  return to_string(value);
 }
 
 template<>

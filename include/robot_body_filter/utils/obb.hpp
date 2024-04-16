@@ -37,8 +37,6 @@
 #ifndef GEOMETRIC_SHAPES_OBB_H
 #define GEOMETRIC_SHAPES_OBB_H
 
-#include <eigen3/Eigen/src/Core/Matrix.h>
-#include <eigen3/Eigen/src/Geometry/Transform.h>
 #include <geometric_shapes/aabb.h>
 #include <memory>
 
