@@ -3,14 +3,16 @@
 
 #include <iterator>
 #include <map>
-#include <ros/duration.h>
-#include <ros/time.h>
+// #include <ros/duration.h>
+// #include <ros/time.h>
+#include <rclcpp/parameter_value.hpp>
+#include <rclcpp/time.hpp>
 #include <set>
 #include <string>
 #include <sstream>
 #include <type_traits>
 #include <vector>
-#include <xmlrpcpp/XmlRpcValue.h>
+// #include <xmlrpcpp/XmlRpcValue.h>
 
 namespace robot_body_filter {
 
@@ -97,12 +99,12 @@ inline std::string to_string(const std::string &value)
   return value;
 }
 
-template<>
-inline std::string to_string(const XmlRpc::XmlRpcValue &value)
-{
-  std::stringstream ss;
-  ss << value;
-  return ss.str();
+// template<>
+// inline std::string to_string(const XmlRpc::XmlRpcValue &value)
+// {
+//   std::stringstream ss;
+//   ss << value;
+//   return ss.str();
 }
 
 template<typename T>
@@ -171,45 +173,45 @@ inline std::string to_string(const std::map<K, V> &value)
   return ss.str();
 }
 
-template<>
-inline std::string to_string(const ros::Time& value)
-{
-  std::stringstream ss;
-  ss << value;
-  return ss.str();
-}
+// template<>
+// inline std::string to_string(const rclcpp::Time& value)
+// {
+//   std::stringstream ss;
+//   ss << value;
+//   return ss.str();
+// }
 
-template<>
-inline std::string to_string(const ros::WallTime& value)
-{
-  std::stringstream ss;
-  ss << value;
-  return ss.str();
-}
+// template<>
+// inline std::string to_string(const rclcpp::WallTime& value)
+// {
+//   std::stringstream ss;
+//   ss << value;
+//   return ss.str();
+// }
 
-template<>
-inline std::string to_string(const ros::SteadyTime& value)
-{
-  std::stringstream ss;
-  ss << value;
-  return ss.str();
-}
+// template<>
+// inline std::string to_string(const rclcpp::SteadyTime& value)
+// {
+//   std::stringstream ss;
+//   ss << value;
+//   return ss.str();
+// }
 
-template<>
-inline std::string to_string(const ros::Duration& value)
-{
-  std::stringstream ss;
-  ss << value;
-  return ss.str();
-}
+// template<>
+// inline std::string to_string(const rclcpp::Duration& value)
+// {
+//   std::stringstream ss;
+//   ss << value;
+//   return ss.str();
+// }
 
-template<>
-inline std::string to_string(const ros::WallDuration& value)
-{
-  std::stringstream ss;
-  ss << value;
-  return ss.str();
-}
+// template<>
+// inline std::string to_string(const rclcpp::WallDuration& value)
+// {
+//   std::stringstream ss;
+//   ss << value;
+//   return ss.str();
+// }
 
-};
+// };
 #endif //ROBOT_BODY_FILTER_UTILS_TOPIC_UTILS_HPP

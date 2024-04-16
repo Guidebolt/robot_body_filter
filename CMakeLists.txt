@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.5)
 project(robot_body_filter)
 
 if(NOT CMAKE_CXX_STANDARD)
-        set(CMAKE_CXX_STANDARD 14)
+        set(CMAKE_CXX_STANDARD 17)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -37,6 +37,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
         # roscpp replaced by rclcpp
         rclcpp
         sensor_msgs
+        std_srvs
         std_msgs
         tf2
         tf2_ros
@@ -62,7 +63,7 @@ include_directories(
         ${Dependency}_INCLUDE_DIRS
 )
 
-add_executable(${PROJECT_NAME}_filter src/RobotBodyFilter.cpp)
+add_library(${PROJECT_NAME}_filter src/RobotBodyFilter.cpp)
 ament_target_dependencies(${PROJECT_NAME}_filter ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 target_include_directories(${PROJECT_NAME}_filter

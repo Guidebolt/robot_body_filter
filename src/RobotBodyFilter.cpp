@@ -5,15 +5,15 @@
 
 #include "robot_body_filter/RobotBodyFilter.h"
 
-#include "pluginlib/class_list_macros.h"
+// #include "pluginlib/class_list_macros.h"
 
 #include <geometric_shapes/bodies.h>
 #include <geometric_shapes/body_operations.h>
 #include <geometric_shapes/shape_operations.h>
 #include <geometric_shapes/shape_to_marker.h>
 
-#include <sensor_msgs/point_cloud_conversion.h>
-#include <sensor_msgs/point_cloud2_iterator.h>
+#include <sensor_msgs/point_cloud_conversion.hpp>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <tf2/LinearMath/Transform.h>
@@ -25,14 +25,14 @@
 #include <robot_body_filter/utils/set_utils.hpp>
 #include <robot_body_filter/utils/shapes.h>
 #include <robot_body_filter/utils/string_utils.hpp>
-#include <robot_body_filter/utils/tf2_eigen.h>
-#include <robot_body_filter/utils/tf2_sensor_msgs.h>
+// #include <robot_body_filter/utils/tf2_eigen.h>
+// #include <robot_body_filter/utils/tf2_sensor_msgs.h>
 #include <robot_body_filter/utils/time_utils.hpp>
 #include <robot_body_filter/utils/urdf_eigen.hpp>
 
-using namespace std;
-using namespace sensor_msgs;
-using namespace filters;
+// using namespace std;
+// using namespace sensor_msgs;
+// using namespace filters;
 
 namespace robot_body_filter {
 
@@ -43,7 +43,7 @@ RobotBodyFilter<T>::RobotBodyFilter() : privateNodeHandle("~") {
 
 template<typename T>
 bool RobotBodyFilter<T>::configure() {
-  this->tfBufferLength = this->getParamVerbose("transforms/buffer_length", ros::Duration(60.0), "s");
+  this->tfBufferLength = this->getParamVerbose("transforms/buffer_length", rclcpp::Duration(60.0), "s");
 
   if (this->tfBuffer == nullptr)
   {
@@ -54,364 +54,364 @@ bool RobotBodyFilter<T>::configure() {
     this->tfBuffer->clear();
   }
 
-  this->fixedFrame = this->getParamVerbose("frames/fixed", "base_link");
-  stripLeadingSlash(this->fixedFrame, true);
-  this->sensorFrame = this->getParamVerbose("frames/sensor", "");
-  stripLeadingSlash(this->sensorFrame, true);
-  this->filteringFrame = this->getParamVerbose("frames/filtering", this->fixedFrame);
-  stripLeadingSlash(this->filteringFrame, true);
-  this->minDistance = this->getParamVerbose("sensor/min_distance", 0.0, "m");
-  this->maxDistance = this->getParamVerbose("sensor/max_distance", 0.0, "m");
-  this->robotDescriptionParam = this->getParamVerbose("body_model/robot_description_param", "robot_description");
-  this->keepCloudsOrganized = this->getParamVerbose("filter/keep_clouds_organized", true);
-  this->modelPoseUpdateInterval = this->getParamVerbose("filter/model_pose_update_interval", ros::Duration(0, 0), "s");
-  const bool doClipping = this->getParamVerbose("filter/do_clipping", true);
-  const bool doContainsTest = this->getParamVerbose("filter/do_contains_test", true);
-  const bool doShadowTest = this->getParamVerbose("filter/do_shadow_test", true);
-  const double maxShadowDistance = this->getParamVerbose("filter/max_shadow_distance", this->maxDistance, "m");
-  this->reachableTransformTimeout = this->getParamVerbose("transforms/timeout/reachable", ros::Duration(0.1), "s");
-  this->unreachableTransformTimeout = this->getParamVerbose("transforms/timeout/unreachable", ros::Duration(0.2), "s");
-  this->requireAllFramesReachable = this->getParamVerbose("transforms/require_all_reachable", false);
-  this->publishNoBoundingSpherePointcloud = this->getParamVerbose("bounding_sphere/publish_cut_out_pointcloud", false);
-  this->publishNoBoundingBoxPointcloud = this->getParamVerbose("bounding_box/publish_cut_out_pointcloud", false);
-  this->publishNoOrientedBoundingBoxPointcloud = this->getParamVerbose("oriented_bounding_box/publish_cut_out_pointcloud", false);
-  this->publishNoLocalBoundingBoxPointcloud = this->getParamVerbose("local_bounding_box/publish_cut_out_pointcloud", false);
-  this->computeBoundingSphere = this->getParamVerbose("bounding_sphere/compute", false) || this->publishNoBoundingSpherePointcloud;
-  this->computeBoundingBox = this->getParamVerbose("bounding_box/compute", false) || this->publishNoBoundingBoxPointcloud;
-  this->computeOrientedBoundingBox = this->getParamVerbose("oriented_bounding_box/compute", false) || this->publishNoOrientedBoundingBoxPointcloud;
-  this->computeLocalBoundingBox = this->getParamVerbose("local_bounding_box/compute", false) || this->publishNoLocalBoundingBoxPointcloud;
-  this->computeDebugBoundingSphere = this->getParamVerbose("bounding_sphere/debug", false);
-  this->computeDebugBoundingBox = this->getParamVerbose("bounding_box/debug", false);
-  this->computeDebugOrientedBoundingBox = this->getParamVerbose("oriented_bounding_box/debug", false);
-  this->computeDebugLocalBoundingBox = this->getParamVerbose("local_bounding_box/debug", false);
-  this->publishBoundingSphereMarker = this->getParamVerbose("bounding_sphere/marker", false);
-  this->publishBoundingBoxMarker = this->getParamVerbose("bounding_box/marker", false);
-  this->publishOrientedBoundingBoxMarker = this->getParamVerbose("oriented_bounding_box/marker", false);
-  this->publishLocalBoundingBoxMarker = this->getParamVerbose("local_bounding_box/marker", false);
-  this->localBoundingBoxFrame = this->getParamVerbose("local_bounding_box/frame_id", this->fixedFrame);
-  this->publishDebugPclInside = this->getParamVerbose("debug/pcl/inside", false);
-  this->publishDebugPclClip = this->getParamVerbose("debug/pcl/clip", false);
-  this->publishDebugPclShadow = this->getParamVerbose("debug/pcl/shadow", false);
-  this->publishDebugContainsMarker = this->getParamVerbose("debug/marker/contains", false);
-  this->publishDebugShadowMarker = this->getParamVerbose("debug/marker/shadow", false);
-  this->publishDebugBsphereMarker = this->getParamVerbose("debug/marker/bounding_sphere", false);
-  this->publishDebugBboxMarker = this->getParamVerbose("debug/marker/bounding_box", false);
+  // this->fixedFrame = this->getParamVerbose("frames/fixed", "base_link");
+  // stripLeadingSlash(this->fixedFrame, true);
+  // this->sensorFrame = this->getParamVerbose("frames/sensor", "");
+  // stripLeadingSlash(this->sensorFrame, true);
+  // this->filteringFrame = this->getParamVerbose("frames/filtering", this->fixedFrame);
+  // stripLeadingSlash(this->filteringFrame, true);
+  // this->minDistance = this->getParamVerbose("sensor/min_distance", 0.0, "m");
+  // this->maxDistance = this->getParamVerbose("sensor/max_distance", 0.0, "m");
+  // this->robotDescriptionParam = this->getParamVerbose("body_model/robot_description_param", "robot_description");
+  // this->keepCloudsOrganized = this->getParamVerbose("filter/keep_clouds_organized", true);
+  // this->modelPoseUpdateInterval = this->getParamVerbose("filter/model_pose_update_interval", ros::Duration(0, 0), "s");
+  // const bool doClipping = this->getParamVerbose("filter/do_clipping", true);
+  // const bool doContainsTest = this->getParamVerbose("filter/do_contains_test", true);
+  // const bool doShadowTest = this->getParamVerbose("filter/do_shadow_test", true);
+  // const double maxShadowDistance = this->getParamVerbose("filter/max_shadow_distance", this->maxDistance, "m");
+  // this->reachableTransformTimeout = this->getParamVerbose("transforms/timeout/reachable", ros::Duration(0.1), "s");
+  // this->unreachableTransformTimeout = this->getParamVerbose("transforms/timeout/unreachable", ros::Duration(0.2), "s");
+  // this->requireAllFramesReachable = this->getParamVerbose("transforms/require_all_reachable", false);
+  // this->publishNoBoundingSpherePointcloud = this->getParamVerbose("bounding_sphere/publish_cut_out_pointcloud", false);
+  // this->publishNoBoundingBoxPointcloud = this->getParamVerbose("bounding_box/publish_cut_out_pointcloud", false);
+  // this->publishNoOrientedBoundingBoxPointcloud = this->getParamVerbose("oriented_bounding_box/publish_cut_out_pointcloud", false);
+  // this->publishNoLocalBoundingBoxPointcloud = this->getParamVerbose("local_bounding_box/publish_cut_out_pointcloud", false);
+  // this->computeBoundingSphere = this->getParamVerbose("bounding_sphere/compute", false) || this->publishNoBoundingSpherePointcloud;
+  // this->computeBoundingBox = this->getParamVerbose("bounding_box/compute", false) || this->publishNoBoundingBoxPointcloud;
+  // this->computeOrientedBoundingBox = this->getParamVerbose("oriented_bounding_box/compute", false) || this->publishNoOrientedBoundingBoxPointcloud;
+  // this->computeLocalBoundingBox = this->getParamVerbose("local_bounding_box/compute", false) || this->publishNoLocalBoundingBoxPointcloud;
+  // this->computeDebugBoundingSphere = this->getParamVerbose("bounding_sphere/debug", false);
+  // this->computeDebugBoundingBox = this->getParamVerbose("bounding_box/debug", false);
+  // this->computeDebugOrientedBoundingBox = this->getParamVerbose("oriented_bounding_box/debug", false);
+  // this->computeDebugLocalBoundingBox = this->getParamVerbose("local_bounding_box/debug", false);
+  // this->publishBoundingSphereMarker = this->getParamVerbose("bounding_sphere/marker", false);
+  // this->publishBoundingBoxMarker = this->getParamVerbose("bounding_box/marker", false);
+  // this->publishOrientedBoundingBoxMarker = this->getParamVerbose("oriented_bounding_box/marker", false);
+  // this->publishLocalBoundingBoxMarker = this->getParamVerbose("local_bounding_box/marker", false);
+  // this->localBoundingBoxFrame = this->getParamVerbose("local_bounding_box/frame_id", this->fixedFrame);
+  // this->publishDebugPclInside = this->getParamVerbose("debug/pcl/inside", false);
+  // this->publishDebugPclClip = this->getParamVerbose("debug/pcl/clip", false);
+  // this->publishDebugPclShadow = this->getParamVerbose("debug/pcl/shadow", false);
+  // this->publishDebugContainsMarker = this->getParamVerbose("debug/marker/contains", false);
+  // this->publishDebugShadowMarker = this->getParamVerbose("debug/marker/shadow", false);
+  // this->publishDebugBsphereMarker = this->getParamVerbose("debug/marker/bounding_sphere", false);
+  // this->publishDebugBboxMarker = this->getParamVerbose("debug/marker/bounding_box", false);
 
-  const auto inflationPadding = this->getParamVerbose("body_model/inflation/padding", 0.0, "m");
-  const auto inflationScale = this->getParamVerbose("body_model/inflation/scale", 1.0);
-  this->defaultContainsInflation.padding = this->getParamVerbose("body_model/inflation/contains_test/padding", inflationPadding, "m");
-  this->defaultContainsInflation.scale = this->getParamVerbose("body_model/inflation/contains_test/scale", inflationScale);
-  this->defaultShadowInflation.padding = this->getParamVerbose("body_model/inflation/shadow_test/padding", inflationPadding, "m");
-  this->defaultShadowInflation.scale = this->getParamVerbose("body_model/inflation/shadow_test/scale", inflationScale);
-  this->defaultBsphereInflation.padding = this->getParamVerbose("body_model/inflation/bounding_sphere/padding", inflationPadding, "m");
-  this->defaultBsphereInflation.scale = this->getParamVerbose("body_model/inflation/bounding_sphere/scale", inflationScale);
-  this->defaultBboxInflation.padding = this->getParamVerbose("body_model/inflation/bounding_box/padding", inflationPadding, "m");
-  this->defaultBboxInflation.scale = this->getParamVerbose("body_model/inflation/bounding_box/scale", inflationScale);
+  // const auto inflationPadding = this->getParamVerbose("body_model/inflation/padding", 0.0, "m");
+  // const auto inflationScale = this->getParamVerbose("body_model/inflation/scale", 1.0);
+  // this->defaultContainsInflation.padding = this->getParamVerbose("body_model/inflation/contains_test/padding", inflationPadding, "m");
+  // this->defaultContainsInflation.scale = this->getParamVerbose("body_model/inflation/contains_test/scale", inflationScale);
+  // this->defaultShadowInflation.padding = this->getParamVerbose("body_model/inflation/shadow_test/padding", inflationPadding, "m");
+  // this->defaultShadowInflation.scale = this->getParamVerbose("body_model/inflation/shadow_test/scale", inflationScale);
+  // this->defaultBsphereInflation.padding = this->getParamVerbose("body_model/inflation/bounding_sphere/padding", inflationPadding, "m");
+  // this->defaultBsphereInflation.scale = this->getParamVerbose("body_model/inflation/bounding_sphere/scale", inflationScale);
+  // this->defaultBboxInflation.padding = this->getParamVerbose("body_model/inflation/bounding_box/padding", inflationPadding, "m");
+  // this->defaultBboxInflation.scale = this->getParamVerbose("body_model/inflation/bounding_box/scale", inflationScale);
 
   // read per-link padding
-  const auto perLinkInflationPadding = this->getParamVerboseMap("body_model/inflation/per_link/padding", std::map<std::string, double>(), "m");
-  for (const auto& inflationPair : perLinkInflationPadding)
-  {
-    bool containsOnly;
-    bool shadowOnly;
-    bool bsphereOnly;
-    bool bboxOnly;
+  // const auto perLinkInflationPadding = this->getParamVerboseMap("body_model/inflation/per_link/padding", std::map<std::string, double>(), "m");
+  // for (const auto& inflationPair : perLinkInflationPadding)
+  // {
+  //   bool containsOnly;
+  //   bool shadowOnly;
+  //   bool bsphereOnly;
+  //   bool bboxOnly;
 
-    auto linkName = inflationPair.first;
-    linkName = removeSuffix(linkName, CONTAINS_SUFFIX, &containsOnly);
-    linkName = removeSuffix(linkName, SHADOW_SUFFIX, &shadowOnly);
-    linkName = removeSuffix(linkName, BSPHERE_SUFFIX, &bsphereOnly);
-    linkName = removeSuffix(linkName, BBOX_SUFFIX, &bboxOnly);
+  //   auto linkName = inflationPair.first;
+  //   linkName = removeSuffix(linkName, CONTAINS_SUFFIX, &containsOnly);
+  //   linkName = removeSuffix(linkName, SHADOW_SUFFIX, &shadowOnly);
+  //   linkName = removeSuffix(linkName, BSPHERE_SUFFIX, &bsphereOnly);
+  //   linkName = removeSuffix(linkName, BBOX_SUFFIX, &bboxOnly);
 
-    if (!shadowOnly && !bsphereOnly && !bboxOnly)
-      this->perLinkContainsInflation[linkName] =
-          ScaleAndPadding(this->defaultContainsInflation.scale, inflationPair.second);
-    if (!containsOnly && !bsphereOnly && !bboxOnly)
-      this->perLinkShadowInflation[linkName] =
-          ScaleAndPadding(this->defaultShadowInflation.scale, inflationPair.second);
-    if (!containsOnly && !shadowOnly && !bboxOnly)
-      this->perLinkBsphereInflation[linkName] =
-          ScaleAndPadding(this->defaultBsphereInflation.scale, inflationPair.second);
-    if (!containsOnly && !shadowOnly && !bsphereOnly)
-      this->perLinkBboxInflation[linkName] =
-          ScaleAndPadding(this->defaultBboxInflation.scale, inflationPair.second);
-  }
+  //   if (!shadowOnly && !bsphereOnly && !bboxOnly)
+  //     this->perLinkContainsInflation[linkName] =
+  //         ScaleAndPadding(this->defaultContainsInflation.scale, inflationPair.second);
+  //   if (!containsOnly && !bsphereOnly && !bboxOnly)
+  //     this->perLinkShadowInflation[linkName] =
+  //         ScaleAndPadding(this->defaultShadowInflation.scale, inflationPair.second);
+  //   if (!containsOnly && !shadowOnly && !bboxOnly)
+  //     this->perLinkBsphereInflation[linkName] =
+  //         ScaleAndPadding(this->defaultBsphereInflation.scale, inflationPair.second);
+  //   if (!containsOnly && !shadowOnly && !bsphereOnly)
+  //     this->perLinkBboxInflation[linkName] =
+  //         ScaleAndPadding(this->defaultBboxInflation.scale, inflationPair.second);
+  // }
 
   // read per-link scale
-  const auto perLinkInflationScale = this->getParamVerboseMap("body_model/inflation/per_link/scale", std::map<std::string, double>());
-  for (const auto& inflationPair : perLinkInflationScale)
-  {
-    bool containsOnly;
-    bool shadowOnly;
-    bool bsphereOnly;
-    bool bboxOnly;
+  // const auto perLinkInflationScale = this->getParamVerboseMap("body_model/inflation/per_link/scale", std::map<std::string, double>());
+  // for (const auto& inflationPair : perLinkInflationScale)
+  // {
+  //   bool containsOnly;
+  //   bool shadowOnly;
+  //   bool bsphereOnly;
+  //   bool bboxOnly;
 
-    auto linkName = inflationPair.first;
-    linkName = removeSuffix(linkName, CONTAINS_SUFFIX, &containsOnly);
-    linkName = removeSuffix(linkName, SHADOW_SUFFIX, &shadowOnly);
-    linkName = removeSuffix(linkName, BSPHERE_SUFFIX, &bsphereOnly);
-    linkName = removeSuffix(linkName, BBOX_SUFFIX, &bboxOnly);
+  //   auto linkName = inflationPair.first;
+  //   linkName = removeSuffix(linkName, CONTAINS_SUFFIX, &containsOnly);
+  //   linkName = removeSuffix(linkName, SHADOW_SUFFIX, &shadowOnly);
+  //   linkName = removeSuffix(linkName, BSPHERE_SUFFIX, &bsphereOnly);
+  //   linkName = removeSuffix(linkName, BBOX_SUFFIX, &bboxOnly);
 
-    if (!shadowOnly && !bsphereOnly && !bboxOnly)
-    {
-      if (this->perLinkContainsInflation.find(linkName) == this->perLinkContainsInflation.end())
-        this->perLinkContainsInflation[linkName] = ScaleAndPadding(inflationPair.second, this->defaultContainsInflation.padding);
-      else
-        this->perLinkContainsInflation[linkName].scale = inflationPair.second;
-    }
+  //   if (!shadowOnly && !bsphereOnly && !bboxOnly)
+  //   {
+  //     if (this->perLinkContainsInflation.find(linkName) == this->perLinkContainsInflation.end())
+  //       this->perLinkContainsInflation[linkName] = ScaleAndPadding(inflationPair.second, this->defaultContainsInflation.padding);
+  //     else
+  //       this->perLinkContainsInflation[linkName].scale = inflationPair.second;
+  //   }
 
-    if (!containsOnly && !bsphereOnly && !bboxOnly)
-    {
-      if (this->perLinkShadowInflation.find(linkName) == this->perLinkShadowInflation.end())
-        this->perLinkShadowInflation[linkName] = ScaleAndPadding(inflationPair.second, this->defaultShadowInflation.padding);
-      else
-        this->perLinkShadowInflation[linkName].scale = inflationPair.second;
-    }
+  //   if (!containsOnly && !bsphereOnly && !bboxOnly)
+  //   {
+  //     if (this->perLinkShadowInflation.find(linkName) == this->perLinkShadowInflation.end())
+  //       this->perLinkShadowInflation[linkName] = ScaleAndPadding(inflationPair.second, this->defaultShadowInflation.padding);
+  //     else
+  //       this->perLinkShadowInflation[linkName].scale = inflationPair.second;
+  //   }
 
-    if (!containsOnly && !shadowOnly && !bboxOnly)
-    {
-      if (this->perLinkBsphereInflation.find(linkName) == this->perLinkBsphereInflation.end())
-        this->perLinkBsphereInflation[linkName] = ScaleAndPadding(inflationPair.second, this->defaultBsphereInflation.padding);
-      else
-        this->perLinkBsphereInflation[linkName].scale = inflationPair.second;
-    }
+  //   if (!containsOnly && !shadowOnly && !bboxOnly)
+  //   {
+  //     if (this->perLinkBsphereInflation.find(linkName) == this->perLinkBsphereInflation.end())
+  //       this->perLinkBsphereInflation[linkName] = ScaleAndPadding(inflationPair.second, this->defaultBsphereInflation.padding);
+  //     else
+  //       this->perLinkBsphereInflation[linkName].scale = inflationPair.second;
+  //   }
 
-    if (!containsOnly && !shadowOnly && !bsphereOnly)
-    {
-      if (this->perLinkBboxInflation.find(linkName) == this->perLinkBboxInflation.end())
-        this->perLinkBboxInflation[linkName] = ScaleAndPadding(inflationPair.second, this->defaultBboxInflation.padding);
-      else
-        this->perLinkBboxInflation[linkName].scale = inflationPair.second;
-    }
-  }
+  //   if (!containsOnly && !shadowOnly && !bsphereOnly)
+  //   {
+  //     if (this->perLinkBboxInflation.find(linkName) == this->perLinkBboxInflation.end())
+  //       this->perLinkBboxInflation[linkName] = ScaleAndPadding(inflationPair.second, this->defaultBboxInflation.padding);
+  //     else
+  //       this->perLinkBboxInflation[linkName].scale = inflationPair.second;
+  //   }
+  // }
 
   // can contain either whole link names, or scoped names of their collisions (i.e. "link::collision_1" or "link::my_collision")
-  this->linksIgnoredInBoundingSphere = this->template getParamVerboseSet<string>("ignored_links/bounding_sphere");
-  this->linksIgnoredInBoundingBox = this->template getParamVerboseSet<string>("ignored_links/bounding_box");
-  this->linksIgnoredInContainsTest = this->template getParamVerboseSet<string>("ignored_links/contains_test");
-  this->linksIgnoredInShadowTest = this->template getParamVerboseSet<string>("ignored_links/shadow_test", { "laser" });
-  this->linksIgnoredEverywhere = this->template getParamVerboseSet<string>("ignored_links/everywhere");
-  this->onlyLinks = this->template getParamVerboseSet<string>("only_links");
+  // this->linksIgnoredInBoundingSphere = this->template getParamVerboseSet<string>("ignored_links/bounding_sphere");
+  // this->linksIgnoredInBoundingBox = this->template getParamVerboseSet<string>("ignored_links/bounding_box");
+  // this->linksIgnoredInContainsTest = this->template getParamVerboseSet<string>("ignored_links/contains_test");
+  // this->linksIgnoredInShadowTest = this->template getParamVerboseSet<string>("ignored_links/shadow_test", { "laser" });
+  // this->linksIgnoredEverywhere = this->template getParamVerboseSet<string>("ignored_links/everywhere");
+  // this->onlyLinks = this->template getParamVerboseSet<string>("only_links");
 
-  this->robotDescriptionUpdatesFieldName = this->getParamVerbose("body_model/dynamic_robot_description/field_name", "robot_model");
-  // subscribe for robot_description param changes
-  this->robotDescriptionUpdatesListener = this->nodeHandle.subscribe(
-    "dynamic_robot_model_server/parameter_updates", 10, &RobotBodyFilter::robotDescriptionUpdated, this);
+  // this->robotDescriptionUpdatesFieldName = this->getParamVerbose("body_model/dynamic_robot_description/field_name", "robot_model");
+  // // subscribe for robot_description param changes
+  // this->robotDescriptionUpdatesListener = this->nodeHandle.subscribe(
+  //   "dynamic_robot_model_server/parameter_updates", 10, &RobotBodyFilter::robotDescriptionUpdated, this);
 
-  this->reloadRobotModelServiceServer = this->privateNodeHandle.advertiseService(
-      "reload_model", &RobotBodyFilter::triggerModelReload, this);
+  // this->reloadRobotModelServiceServer = this->privateNodeHandle.advertiseService(
+  //     "reload_model", &RobotBodyFilter::triggerModelReload, this);
 
-  if (this->computeBoundingSphere) {
-    this->boundingSpherePublisher = this->nodeHandle.template advertise<SphereStamped>("robot_bounding_sphere", 100);
-  }
+  // if (this->computeBoundingSphere) {
+  //   this->boundingSpherePublisher = this->nodeHandle.template advertise<SphereStamped>("robot_bounding_sphere", 100);
+  // }
 
-  if (this->computeBoundingBox) {
-    this->boundingBoxPublisher = this->nodeHandle.template advertise<geometry_msgs::PolygonStamped>("robot_bounding_box", 100);
-  }
+  // if (this->computeBoundingBox) {
+  //   this->boundingBoxPublisher = this->nodeHandle.template advertise<geometry_msgs::PolygonStamped>("robot_bounding_box", 100);
+  // }
 
-  if (this->computeOrientedBoundingBox) {
-    this->orientedBoundingBoxPublisher = this->nodeHandle.template advertise<OrientedBoundingBoxStamped>("robot_oriented_bounding_box", 100);
-  }
+  // if (this->computeOrientedBoundingBox) {
+  //   this->orientedBoundingBoxPublisher = this->nodeHandle.template advertise<OrientedBoundingBoxStamped>("robot_oriented_bounding_box", 100);
+  // }
 
-  if (this->computeLocalBoundingBox) {
-    this->localBoundingBoxPublisher = this->nodeHandle.template advertise<geometry_msgs::PolygonStamped>("robot_local_bounding_box", 100);
-  }
+  // if (this->computeLocalBoundingBox) {
+  //   this->localBoundingBoxPublisher = this->nodeHandle.template advertise<geometry_msgs::PolygonStamped>("robot_local_bounding_box", 100);
+  // }
 
-  if (this->publishBoundingSphereMarker && this->computeBoundingSphere) {
-    this->boundingSphereMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::Marker>("robot_bounding_sphere_marker", 100);
-  }
+  // if (this->publishBoundingSphereMarker && this->computeBoundingSphere) {
+  //   this->boundingSphereMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::Marker>("robot_bounding_sphere_marker", 100);
+  // }
 
-  if (this->publishBoundingBoxMarker && this->computeBoundingBox) {
-    this->boundingBoxMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::Marker>("robot_bounding_box_marker", 100);
-  }
+  // if (this->publishBoundingBoxMarker && this->computeBoundingBox) {
+  //   this->boundingBoxMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::Marker>("robot_bounding_box_marker", 100);
+  // }
 
-  if (this->publishOrientedBoundingBoxMarker && this->computeOrientedBoundingBox) {
-    this->orientedBoundingBoxMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::Marker>("robot_oriented_bounding_box_marker", 100);
-  }
+  // if (this->publishOrientedBoundingBoxMarker && this->computeOrientedBoundingBox) {
+  //   this->orientedBoundingBoxMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::Marker>("robot_oriented_bounding_box_marker", 100);
+  // }
 
-  if (this->publishLocalBoundingBoxMarker && this->computeLocalBoundingBox) {
-    this->localBoundingBoxMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::Marker>("robot_local_bounding_box_marker", 100);
-  }
+  // if (this->publishLocalBoundingBoxMarker && this->computeLocalBoundingBox) {
+  //   this->localBoundingBoxMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::Marker>("robot_local_bounding_box_marker", 100);
+  // }
 
-  if (this->publishNoBoundingBoxPointcloud)
-  {
-    this->scanPointCloudNoBoundingBoxPublisher = this->nodeHandle.template advertise<sensor_msgs::PointCloud2>("scan_point_cloud_no_bbox", 100);
-  }
+  // if (this->publishNoBoundingBoxPointcloud)
+  // {
+  //   this->scanPointCloudNoBoundingBoxPublisher = this->nodeHandle.template advertise<sensor_msgs::PointCloud2>("scan_point_cloud_no_bbox", 100);
+  // }
 
-  if (this->publishNoOrientedBoundingBoxPointcloud)
-  {
-    this->scanPointCloudNoOrientedBoundingBoxPublisher = this->nodeHandle.template advertise<sensor_msgs::PointCloud2>("scan_point_cloud_no_oriented_bbox", 100);
-  }
+  // if (this->publishNoOrientedBoundingBoxPointcloud)
+  // {
+  //   this->scanPointCloudNoOrientedBoundingBoxPublisher = this->nodeHandle.template advertise<sensor_msgs::PointCloud2>("scan_point_cloud_no_oriented_bbox", 100);
+  // }
 
-  if (this->publishNoLocalBoundingBoxPointcloud)
-  {
-    this->scanPointCloudNoLocalBoundingBoxPublisher = this->nodeHandle.template advertise<sensor_msgs::PointCloud2>("scan_point_cloud_no_local_bbox", 100);
-  }
+  // if (this->publishNoLocalBoundingBoxPointcloud)
+  // {
+  //   this->scanPointCloudNoLocalBoundingBoxPublisher = this->nodeHandle.template advertise<sensor_msgs::PointCloud2>("scan_point_cloud_no_local_bbox", 100);
+  // }
 
-  if (this->publishNoBoundingSpherePointcloud)
-  {
-    this->scanPointCloudNoBoundingSpherePublisher = this->nodeHandle.template advertise<sensor_msgs::PointCloud2>("scan_point_cloud_no_bsphere", 100);
-  }
+  // if (this->publishNoBoundingSpherePointcloud)
+  // {
+  //   this->scanPointCloudNoBoundingSpherePublisher = this->nodeHandle.template advertise<sensor_msgs::PointCloud2>("scan_point_cloud_no_bsphere", 100);
+  // }
 
-  if (this->publishDebugPclInside)
-  {
-    this->debugPointCloudInsidePublisher = this->nodeHandle.template advertise<sensor_msgs::PointCloud2>("scan_point_cloud_inside", 100);
-  }
+  // if (this->publishDebugPclInside)
+  // {
+  //   this->debugPointCloudInsidePublisher = this->nodeHandle.template advertise<sensor_msgs::PointCloud2>("scan_point_cloud_inside", 100);
+  // }
 
-  if (this->publishDebugPclClip)
-  {
-    this->debugPointCloudClipPublisher = this->nodeHandle.template advertise<sensor_msgs::PointCloud2>("scan_point_cloud_clip", 100);
-  }
+  // if (this->publishDebugPclClip)
+  // {
+  //   this->debugPointCloudClipPublisher = this->nodeHandle.template advertise<sensor_msgs::PointCloud2>("scan_point_cloud_clip", 100);
+  // }
 
-  if (this->publishDebugPclShadow)
-  {
-    this->debugPointCloudShadowPublisher = this->nodeHandle.template advertise<sensor_msgs::PointCloud2>("scan_point_cloud_shadow", 100);
-  }
+  // if (this->publishDebugPclShadow)
+  // {
+  //   this->debugPointCloudShadowPublisher = this->nodeHandle.template advertise<sensor_msgs::PointCloud2>("scan_point_cloud_shadow", 100);
+  // }
 
-  if (this->publishDebugContainsMarker)
-  {
-    this->debugContainsMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>("robot_model_for_contains_test", 100);
-  }
+  // if (this->publishDebugContainsMarker)
+  // {
+  //   this->debugContainsMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>("robot_model_for_contains_test", 100);
+  // }
 
-  if (this->publishDebugShadowMarker)
-  {
-    this->debugShadowMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>("robot_model_for_shadow_test", 100);
-  }
+  // if (this->publishDebugShadowMarker)
+  // {
+  //   this->debugShadowMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>("robot_model_for_shadow_test", 100);
+  // }
 
-  if (this->publishDebugBsphereMarker)
-  {
-    this->debugBsphereMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>("robot_model_for_bounding_sphere", 100);
-  }
+  // if (this->publishDebugBsphereMarker)
+  // {
+  //   this->debugBsphereMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>("robot_model_for_bounding_sphere", 100);
+  // }
 
-  if (this->publishDebugBboxMarker)
-  {
-    this->debugBboxMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>("robot_model_for_bounding_box", 100);
-  }
+  // if (this->publishDebugBboxMarker)
+  // {
+  //   this->debugBboxMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>("robot_model_for_bounding_box", 100);
+  // }
 
-  if (this->computeDebugBoundingBox) {
-    this->boundingBoxDebugMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>(
-      "robot_bounding_box_debug", 100);
-  }
+  // if (this->computeDebugBoundingBox) {
+  //   this->boundingBoxDebugMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>(
+  //     "robot_bounding_box_debug", 100);
+  // }
 
-  if (this->computeDebugOrientedBoundingBox) {
-    this->orientedBoundingBoxDebugMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>(
-      "robot_oriented_bounding_box_debug", 100);
-  }
+  // if (this->computeDebugOrientedBoundingBox) {
+  //   this->orientedBoundingBoxDebugMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>(
+  //     "robot_oriented_bounding_box_debug", 100);
+  // }
 
-  if (this->computeDebugLocalBoundingBox) {
-    this->localBoundingBoxDebugMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>(
-      "robot_local_bounding_box_debug", 100);
-  }
+  // if (this->computeDebugLocalBoundingBox) {
+  //   this->localBoundingBoxDebugMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>(
+  //     "robot_local_bounding_box_debug", 100);
+  // }
 
-  if (this->computeDebugBoundingSphere) {
-    this->boundingSphereDebugMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>(
-      "robot_bounding_sphere_debug", 100);
-  }
+  // if (this->computeDebugBoundingSphere) {
+  //   this->boundingSphereDebugMarkerPublisher = this->nodeHandle.template advertise<visualization_msgs::MarkerArray>(
+  //     "robot_bounding_sphere_debug", 100);
+  // }
 
   // initialize the 3D body masking tool
-  auto getShapeTransformCallback = std::bind(&RobotBodyFilter::getShapeTransform, this, std::placeholders::_1, std::placeholders::_2);
-  shapeMask = std::make_unique<RayCastingShapeMask>(getShapeTransformCallback,
-      this->minDistance, this->maxDistance,
-      doClipping, doContainsTest, doShadowTest, maxShadowDistance);
+  // auto getShapeTransformCallback = std::bind(&RobotBodyFilter::getShapeTransform, this, std::placeholders::_1, std::placeholders::_2);
+  // shapeMask = std::make_unique<RayCastingShapeMask>(getShapeTransformCallback,
+  //     this->minDistance, this->maxDistance,
+  //     doClipping, doContainsTest, doShadowTest, maxShadowDistance);
 
-  // the other case happens when configure() is called again from update() (e.g. when a new bag file
-  // started playing)
-  if (this->tfFramesWatchdog == nullptr) {
-    std::set<std::string> initialMonitoredFrames;
-    if (!this->sensorFrame.empty())
-    {
-      initialMonitoredFrames.insert(this->sensorFrame);
-    }
+  // // the other case happens when configure() is called again from update() (e.g. when a new bag file
+  // // started playing)
+  // if (this->tfFramesWatchdog == nullptr) {
+  //   std::set<std::string> initialMonitoredFrames;
+  //   if (!this->sensorFrame.empty())
+  //   {
+  //     initialMonitoredFrames.insert(this->sensorFrame);
+  //   }
 
-    this->tfFramesWatchdog = std::make_shared<TFFramesWatchdog>(this->filteringFrame,
-        initialMonitoredFrames, this->tfBuffer,
-        this->unreachableTransformTimeout, ros::Rate(ros::Duration(1.0)));
-    this->tfFramesWatchdog->start();
-  }
+  //   this->tfFramesWatchdog = std::make_shared<TFFramesWatchdog>(this->filteringFrame,
+  //       initialMonitoredFrames, this->tfBuffer,
+  //       this->unreachableTransformTimeout, ros::Rate(ros::Duration(1.0)));
+  //   this->tfFramesWatchdog->start();
+  // }
 
-  { // initialize the robot body to be masked out
+  // { // initialize the robot body to be masked out
 
-    string robotUrdf;
-    while (!this->nodeHandle.getParam(this->robotDescriptionParam, robotUrdf) || robotUrdf.length() == 0) {
-      if (this->failWithoutRobotDescription)
-      {
-        throw std::runtime_error(
-            "RobotBodyFilter: " + this->robotDescriptionParam + " is empty or not set.");
-      }
-      if (!ros::ok())
-        return false;
+  //   string robotUrdf;
+  //   while (!this->nodeHandle.getParam(this->robotDescriptionParam, robotUrdf) || robotUrdf.length() == 0) {
+  //     if (this->failWithoutRobotDescription)
+  //     {
+  //       throw std::runtime_error(
+  //           "RobotBodyFilter: " + this->robotDescriptionParam + " is empty or not set.");
+  //     }
+  //     if (!ros::ok())
+  //       return false;
 
-      ROS_ERROR("RobotBodyFilter: %s is empty or not set. Please, provide the robot model. Waiting 1s.",
-                robotDescriptionParam.c_str());
-      ros::Duration(1.0).sleep();
-    }
+  //     ROS_ERROR("RobotBodyFilter: %s is empty or not set. Please, provide the robot model. Waiting 1s.",
+  //               robotDescriptionParam.c_str());
+  //     ros::Duration(1.0).sleep();
+  //   }
 
-    // happens when configure() is called again from update() (e.g. when a new bag file started
-    // playing)
-    if (!this->shapesToLinks.empty())
-      this->clearRobotMask();
-    this->addRobotMaskFromUrdf(robotUrdf);
-  }
+  //   // happens when configure() is called again from update() (e.g. when a new bag file started
+  //   // playing)
+  //   if (!this->shapesToLinks.empty())
+  //     this->clearRobotMask();
+  //   this->addRobotMaskFromUrdf(robotUrdf);
+  // }
 
-  ROS_INFO("RobotBodyFilter: Successfully configured.");
-  ROS_INFO("Filtering data in frame %s", this->filteringFrame.c_str());
-  ROS_INFO("RobotBodyFilter: Filtering into the following categories:");
-  ROS_INFO("RobotBodyFilter: \tOUTSIDE");
-  if (doClipping) ROS_INFO("RobotBodyFilter: \tCLIP");
-  if (doContainsTest) ROS_INFO("RobotBodyFilter: \tINSIDE");
-  if (doShadowTest) ROS_INFO("RobotBodyFilter: \tSHADOW");
+  // ROS_INFO("RobotBodyFilter: Successfully configured.");
+  // ROS_INFO("Filtering data in frame %s", this->filteringFrame.c_str());
+  // ROS_INFO("RobotBodyFilter: Filtering into the following categories:");
+  // ROS_INFO("RobotBodyFilter: \tOUTSIDE");
+  // if (doClipping) ROS_INFO("RobotBodyFilter: \tCLIP");
+  // if (doContainsTest) ROS_INFO("RobotBodyFilter: \tINSIDE");
+  // if (doShadowTest) ROS_INFO("RobotBodyFilter: \tSHADOW");
 
-  if (this->onlyLinks.empty()) {
-    if (this->linksIgnoredEverywhere.empty()) {
-      ROS_INFO("RobotBodyFilter: Filtering applied to all links.");
-    } else {
-      ROS_INFO("RobotBodyFilter: Filtering applied to all links except %s.", to_string(this->linksIgnoredEverywhere).c_str());
-    }
-  } else {
-    if (this->linksIgnoredEverywhere.empty()) {
-      ROS_INFO("RobotBodyFilter: Filtering applied to links %s.", to_string(this->onlyLinks).c_str());
-    } else {
-      ROS_INFO("RobotBodyFilter: Filtering applied to links %s with these links excluded: %s.", to_string(this->onlyLinks).c_str(), to_string(this->linksIgnoredEverywhere).c_str());
-    }
-  }
+  // if (this->onlyLinks.empty()) {
+  //   if (this->linksIgnoredEverywhere.empty()) {
+  //     ROS_INFO("RobotBodyFilter: Filtering applied to all links.");
+  //   } else {
+  //     ROS_INFO("RobotBodyFilter: Filtering applied to all links except %s.", to_string(this->linksIgnoredEverywhere).c_str());
+  //   }
+  // } else {
+  //   if (this->linksIgnoredEverywhere.empty()) {
+  //     ROS_INFO("RobotBodyFilter: Filtering applied to links %s.", to_string(this->onlyLinks).c_str());
+  //   } else {
+  //     ROS_INFO("RobotBodyFilter: Filtering applied to links %s with these links excluded: %s.", to_string(this->onlyLinks).c_str(), to_string(this->linksIgnoredEverywhere).c_str());
+  //   }
+  // }
 
-  this->timeConfigured = ros::Time::now();
+  // this->timeConfigured = ros::Time::now();
 
   return true;
 }
 
 bool RobotBodyFilterLaserScan::configure() {
-  this->pointByPointScan = this->getParamVerbose("sensor/point_by_point", true);
+  // this->pointByPointScan = this->getParamVerbose("sensor/point_by_point", true);
 
-  bool success = RobotBodyFilter::configure();
-  return success;
+  // bool success = RobotBodyFilter::configure();
+  return false;
 }
 
 bool RobotBodyFilterPointCloud2::configure() {
-  this->pointByPointScan = this->getParamVerbose("sensor/point_by_point", false);
+  // this->pointByPointScan = this->getParamVerbose("sensor/point_by_point", false);
 
-  bool success = RobotBodyFilter::configure();
-  if (!success)
-    return false;
+  // bool success = RobotBodyFilter::configure();
+  // if (!success)
+  //   return false;
 
-  this->outputFrame = this->getParamVerbose("frames/output", this->filteringFrame);
+  // this->outputFrame = this->getParamVerbose("frames/output", this->filteringFrame);
 
-  const auto pointChannels = this->getParamVerbose("cloud/point_channels", std::vector<std::string>{"vp_"});
-  const auto directionChannels = this->getParamVerbose("cloud/direction_channels", std::vector<std::string>{"normal_"});
+  // const auto pointChannels = this->getParamVerbose("cloud/point_channels", std::vector<std::string>{"vp_"});
+  // const auto directionChannels = this->getParamVerbose("cloud/direction_channels", std::vector<std::string>{"normal_"});
 
-  for (const auto& channel : pointChannels)
-    this->channelsToTransform[channel] = CloudChannelType::POINT;
-  for (const auto& channel : directionChannels)
-    this->channelsToTransform[channel] = CloudChannelType::DIRECTION;
+  // for (const auto& channel : pointChannels)
+  //   this->channelsToTransform[channel] = CloudChannelType::POINT;
+  // for (const auto& channel : directionChannels)
+  //   this->channelsToTransform[channel] = CloudChannelType::DIRECTION;
 
-  stripLeadingSlash(this->outputFrame, true);
+  // stripLeadingSlash(this->outputFrame, true);
 
   return true;
 }
 
 template <typename T>
 bool RobotBodyFilter<T>::computeMask(
-    const sensor_msgs::PointCloud2 &projectedPointCloud,
+    const sensor_msgs::msg::PointCloud2 &projectedPointCloud,
     std::vector<RayCastingShapeMask::MaskValue> &pointMask,
     const std::string &sensorFrame) {
 
@@ -432,7 +432,7 @@ bool RobotBodyFilter<T>::computeMask(
           remainingTime(scanTime, this->reachableTransformTimeout));
       tf2::fromMsg(sensorTf.transform.translation, sensorPosition);
     } catch (tf2::TransformException& e) {
-      ROS_ERROR("RobotBodyFilter: Could not compute filtering mask due to this "
+      RCLCPP_ERROR(nodeHandle.get_logger(), "RobotBodyFilter: Could not compute filtering mask due to this "
                 "TF exception: %s", e.what());
       return false;
     }
@@ -460,7 +460,7 @@ bool RobotBodyFilter<T>::computeMask(
       if ((*stamps_end_it) > static_cast<float>(scanDuration))
         scanDuration = static_cast<double>(*stamps_end_it);
     }
-    const ros::Time afterScanTime(scanTime + ros::Duration().fromSec(scanDuration));
+    const rclcpp::Time afterScanTime(scanTime + rclcpp::Duration::from_seconds(scanDuration));
 
     size_t updateBodyPosesEvery;
     if (this->modelPoseUpdateInterval.sec == 0 && this->modelPoseUpdateInterval.nsec == 0) {
@@ -476,7 +476,7 @@ bool RobotBodyFilter<T>::computeMask(
     // isn't really taken point by point with different timestamps
     if (scanDuration == 0.0) {
       updateBodyPosesEvery = num_points(projectedPointCloud) + 1;
-      ROS_WARN_ONCE("RobotBodyFilter: sensor/point_by_point is set to true but "
+      RCLCPP_WARN_ONCE(nodeHandle.get_logger(), "RobotBodyFilter: sensor/point_by_point is set to true but "
                     "all points in the cloud have the same timestamp. You should"
                     " change the parameter to false to gain performance.");
     }
@@ -512,7 +512,7 @@ bool RobotBodyFilter<T>::computeMask(
     }
   }
 
-  ROS_DEBUG("RobotBodyFilter: Mask computed in %.5f secs.", double(clock()-stopwatchOverall) / CLOCKS_PER_SEC);
+  RCLCPP_DEBUG(nodeHandle.get_logger(), "RobotBodyFilter: Mask computed in %.5f secs.", double(clock()-stopwatchOverall) / CLOCKS_PER_SEC);
 
   this->publishDebugPointClouds(projectedPointCloud, pointMask);
   this->publishDebugMarkers(scanTime);
@@ -521,7 +521,7 @@ bool RobotBodyFilter<T>::computeMask(
   this->computeAndPublishOrientedBoundingBox(projectedPointCloud);
   this->computeAndPublishLocalBoundingBox(projectedPointCloud);
 
-  ROS_DEBUG("RobotBodyFilter: Filtering run time is %.5f secs.", double(clock()-stopwatchOverall) / CLOCKS_PER_SEC);
+  RCLCPP_DEBUG(nodeHandle.get_logger(), "RobotBodyFilter: Filtering run time is %.5f secs.", double(clock()-stopwatchOverall) / CLOCKS_PER_SEC);
   return true;
 }
 
