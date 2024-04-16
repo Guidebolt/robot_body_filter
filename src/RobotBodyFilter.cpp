@@ -30,9 +30,9 @@
 #include <robot_body_filter/utils/time_utils.hpp>
 #include <robot_body_filter/utils/urdf_eigen.hpp>
 
-using namespace std;
-using namespace sensor_msgs;
-using namespace filters;
+// using namespace std;
+// using namespace sensor_msgs;
+// using namespace filters;
 
 namespace robot_body_filter {
 
@@ -43,7 +43,7 @@ RobotBodyFilter<T>::RobotBodyFilter() : privateNodeHandle("~") {
 
 template<typename T>
 bool RobotBodyFilter<T>::configure() {
-  this->tfBufferLength = this->getParamVerbose("transforms/buffer_length", ros::Duration(60.0), "s");
+  this->tfBufferLength = this->getParamVerbose("transforms/buffer_length", rclcpp::Duration(60.0), "s");
 
   if (this->tfBuffer == nullptr)
   {

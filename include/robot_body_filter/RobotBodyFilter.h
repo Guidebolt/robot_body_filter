@@ -4,6 +4,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <string>
 #include <thread>
 #include <utility>
 
@@ -27,17 +28,17 @@
 #include <rclcpp/rclcpp.hpp>
 // #include <robot_body_filter/OrientedBoundingBoxStamped.h>
 #include <robot_body_filter/RayCastingShapeMask.h>
-#include <robot_body_filter/SphereStamped.h>
+// #include <robot_body_filter/SphereStamped.h>
 #include <robot_body_filter/utils/filter_utils.hpp>
-#include <robot_body_filter/utils/tf2_sensor_msgs.h>
-#include <sensor_msgs/LaserScan.h>
-#include <std_srvs/Trigger.h>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
+// #include <robot_body_filter/utils/tf2_sensor_msgs.h>
+#include <sensor_msgs/msg/laser_scan.hpp>
+// #include <std_srvs/srv/trigger.hpp>
+// #include <tf2_ros/buffer.h>
+// #include <tf2_ros/transform_listener.h>
 #include <urdf/model.h>
-#include <visualization_msgs/MarkerArray.h>
+// #include <visualization_msgs/MarkerArray.h>
 
-#include <robot_body_filter/TfFramesWatchdog.h>
+// #include <robot_body_filter/TfFramesWatchdog.h>
 
 namespace robot_body_filter {
 /**
@@ -96,7 +97,7 @@ static const std::string BBOX_SUFFIX = "::bounding_box";
  * \author Martin Pecka
  */
 template <typename T>
-class RobotBodyFilter : public ::robot_body_filter::FilterBase<T> {
+class RobotBodyFilter : public filters::FilterBase<T> {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -111,8 +112,8 @@ public:
 
 protected:
   //! Handle of the node this filter runs in.
-  ros::NodeHandle nodeHandle;
-  ros::NodeHandle privateNodeHandle;
+  rclcpp::Node nodeHandle;
+  rclcpp::Node privateNodeHandle;
 
   /** \brief If true, suppose that every point in the scan was captured at a
    * different time instant. Otherwise, the scan is assumed to be taken at once.
@@ -137,7 +138,7 @@ protected:
    * the masking algorithm a little bit less precise but more computationally
    * affordable.
    */
-  ros::Duration modelPoseUpdateInterval;
+  rclcpp::Duration modelPoseUpdateInterval;
 
   /** \brief Fixed frame wrt the sensor frame.
    * Usually base_link for stationary robots (or sensor frame if both
@@ -329,7 +330,7 @@ protected:
   std::shared_ptr<std::mutex> modelMutex;
 
   //! tf buffer length
-  ros::Duration tfBufferLength;
+  rclcpp::Duration tfBufferLength;
   //! tf client
   std::shared_ptr<tf2_ros::Buffer> tfBuffer;
   //! tf listener
