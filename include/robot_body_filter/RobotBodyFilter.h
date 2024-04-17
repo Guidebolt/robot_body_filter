@@ -106,7 +106,7 @@ public:
 
   bool update(const T &data_in, T &data_out) override = 0;
 
-  // protected:
+protected:
   //! Handle of the node this filter runs in.
   rclcpp::Node nodeHandle;
   rclcpp::Node privateNodeHandle;
