@@ -79,6 +79,8 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/OrientedBoundingBox.msg"
   "msg/OrientedBoundingBoxStamped.msg"
+  "msg/Sphere.msg"
+  "msg/SphereStamped.msg"
   DEPENDENCIES builtin_interfaces std_msgs geometry_msgs std_srvs tf2_msgs tf2_sensor_msgs tf2_ros tf2_eigen visualization_msgs
  )
 

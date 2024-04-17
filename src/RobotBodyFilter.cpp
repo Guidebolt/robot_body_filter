@@ -652,46 +652,48 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
   //   this->tfFramesWatchdog->start();
   // }
 
-  // { // initialize the robot body to be masked out
+  { // initialize the robot body to be masked out
 
-  //   std::string robotUrdf;
-  //   while (!this->nodeHandle.getParam(this->robotDescriptionParam,
-  //   robotUrdf)
-  //   || robotUrdf.length() == 0) {
-  //     if (this->failWithoutRobotDescription)
-  //     {
-  //       throw std::runtime_error(
-  //           "RobotBodyFilter: " + this->robotDescriptionParam + " is
-  //           empty or not set.");
-  //     }
-  //     if (!rclcpp::ok())
-  //       return false;
+    std::string robotUrdf;
+    while (!this->nodeHandle.get_parameter(this->robotDescriptionParam,
+                                           robotUrdf) ||
+           robotUrdf.length() == 0) {
+      if (this->failWithoutRobotDescription) {
+        throw std::runtime_error(
+            "RobotBodyFilter: " + this->robotDescriptionParam +
+            " is empty or not set.");
+      }
+      if (!rclcpp::ok())
+        return false;
 
-  //     ROS_ERROR("RobotBodyFilter: %s is empty or not set. Please, provide
-  //     the robot model. Waiting 1s.",
-  //               robotDescriptionParam.c_str());
-  //     rclcpp::Duration(1.0).sleep();
-  //   }
+      RCLCPP_ERROR(this->nodeHandle.get_logger(),
+                   "RobotBodyFilter: %s is empty or not set. Please, provide "
+                   "the robot model. Waiting 1s. ",
+                   robotDescriptionParam.c_str());
+      rclcpp::sleep_for(std::chrono::seconds(1));
+    }
 
-  //   // happens when configure() is called again from update() (e.g. when
-  //   a new bag file started
-  //   // playing)
-  //   if (!this->shapesToLinks.empty())
-  //     this->clearRobotMask();
-  //   this->addRobotMaskFromUrdf(robotUrdf);
-  // }
+    // happens when configure() is called again from update() (e.g. when
+    // a new bag file started
+    // playing)
+    if (!this->shapesToLinks.empty())
+      this->clearRobotMask();
+    this->addRobotMaskFromUrdf(robotUrdf);
+  }
 
-  // RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Successfully
-  // configured."); RCLCPP_INFO(nodeHandle.get_logger(),"Filtering data in
-  // frame %s", this->filteringFrame.c_str());
-  // RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering into
-  // the following categories:");
-  // RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: \tOUTSIDE");
-  // if (doClipping) RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter:
-  // \tCLIP"); if (doContainsTest)
-  // RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: \tINSIDE"); if
-  // (doShadowTest) RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter:
-  // \tSHADOW");
+  RCLCPP_INFO(nodeHandle.get_logger(),
+              "RobotBodyFilter: Successfullyconfigured.");
+  RCLCPP_INFO(nodeHandle.get_logger(), "Filtering data inframe %s",
+              this->filteringFrame.c_str());
+  RCLCPP_INFO(nodeHandle.get_logger(),
+              "RobotBodyFilter: Filtering into the following categories:");
+  RCLCPP_INFO(nodeHandle.get_logger(), "RobotBodyFilter: \tOUTSIDE");
+  if (doClipping)
+    RCLCPP_INFO(nodeHandle.get_logger(), "RobotBodyFilter: \tCLIP");
+  if (doContainsTest)
+    RCLCPP_INFO(nodeHandle.get_logger(), "RobotBodyFilter: \tINSIDE");
+  if (doShadowTest)
+    RCLCPP_INFO(nodeHandle.get_logger(), "RobotBodyFilter: \tSHADOW");
 
   // if (this->onlyLinks.empty()) {
   //   if (this->linksIgnoredEverywhere.empty()) {
@@ -1419,14 +1421,16 @@ void RobotBodyFilter<T>::addRobotMaskFromUrdf(const std::string &urdfModel) {
   // parse the URDF model
   urdf::Model parsedUrdfModel;
   bool urdfParseSucceeded = parsedUrdfModel.initString(urdfModel);
-  if (!urdfParseSucceeded) {
-    ROS_ERROR_STREAM("RobotBodyFilter: The URDF model given in parameter '"
-                     << this->robotDescriptionParam
-                     << "' cannot be parsed. See "
-                        "urdf::Model::initString for debugging, or try running "
-                        "'gzsdf my_robot.urdf'");
-    return;
-  }
+  // if (!urdfParseSucceeded) {
+  //   RCLCPP_ERROR(nodeHandle.get_logger(),"RobotBodyFilter: The URDF model
+  //   given in parameter '"
+  //                    << this->robotDescriptionParam
+  //                    << "' cannot be parsed. See "
+  //                       "urdf::Model::initString for debugging, or try
+  //                       running "
+  //                       "'gzsdf my_robot.urdf'");
+  //   return;
+  // }
 
   {
     std::lock_guard<std::mutex> guard(*this->modelMutex);
