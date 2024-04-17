@@ -44,7 +44,10 @@ set(UTILS_SRCS
 #   src/utils/time_utils.cpp
 )
 add_library(${PROJECT_NAME}_utils ${UTILS_SRCS})
-target_link_libraries(${PROJECT_NAME}_utils ${catkin_LIBRARIES} ${LIBFCL_LIBRARIES} ${PCL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_utils ${PCL_LIBRARIES})
+ament_target_dependencies(${PROJECT_NAME}_utils
+${THIS_PACKAGE_DEPS}
+)
 
 add_library(lib${PROJECT_NAME} src/RobotBodyFilter.cpp)
 target_link_libraries(lib${PROJECT_NAME}
@@ -64,8 +67,9 @@ target_include_directories(lib${PROJECT_NAME}
 if (BUILD_TESTING) 
   find_package(ament_cmake_gtest REQUIRED)
 
-#   ament_add_gtest(test_set_utils test/test_set_utils.cpp)
-#   target_link_libraries(test_set_utils ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
+  # ament_add_gtest(test_set_utils test/test_set_utils.cpp)
+  # ament_target_dependencies(test_set_utils ${THIS_PACKAGE_DEPS})
+  # target_link_libraries(test_set_utils lib${PROJECT_NAME})
 
 #   ament_add_gtest(test_shapes_rbf test/test_shapes.cpp)
 #   target_link_libraries(test_shapes_rbf ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
@@ -84,7 +88,7 @@ if (BUILD_TESTING)
 
   ament_add_gtest(test_bodies test/test_bodies.cpp)
   ament_target_dependencies(test_bodies ${THIS_PACKAGE_DEPS})
-  target_link_libraries(test_bodies lib${PROJECT_NAME})
+  target_link_libraries(test_bodies lib${PROJECT_NAME} ${PROJECT_NAME}_utils)
 
 #   ament_add_gtest(test_cloud test/test_cloud.cpp)
 #   target_link_libraries(test_cloud ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
