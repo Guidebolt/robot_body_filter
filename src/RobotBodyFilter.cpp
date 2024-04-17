@@ -109,7 +109,6 @@ RobotBodyFilter<T>::RobotBodyFilter()
                                      param_desc);
   this->nodeHandle.declare_parameter("body_model/inflation/scale", 1.0);
   // NOTE: Default changed from inflationPadding/inflationScale to 0.0/1.0
-  param_desc.description = "m";
   this->nodeHandle.declare_parameter(
       "body_model/inflation/contains_test/padding", 0.0, param_desc);
   this->nodeHandle.declare_parameter("body_model/inflation/contains_test/scale",
@@ -126,6 +125,13 @@ RobotBodyFilter<T>::RobotBodyFilter()
       "body_model/inflation/bounding_box/padding", 0.0, param_desc);
   this->nodeHandle.declare_parameter("body_model/inflation/bounding_box/scale",
                                      1.0);
+
+  // TODO: This initialization may be incorrect, not sure if I understand how
+  // this works
+  // https://docs.ros2.org/foxy/api/rclcpp/classrclcpp_1_1Node.html#ae5ab12777100f65bd09163814dbbf486
+  // this might need to be initialized with the names of each link
+  this->nodeHandle.declare_parameters("body_model/inflation/per_link/padding",
+                                      std::map<std::string, double>());
 }
 
 template <typename T> bool RobotBodyFilter<T>::configure() {
@@ -145,143 +151,177 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
 
   this->nodeHandle.get_parameter("fixedFrame", this->fixedFrame);
   stripLeadingSlash(this->fixedFrame, true);
-
   this->nodeHandle.get_parameter("sensorFrame", this->sensorFrame);
   stripLeadingSlash(this->sensorFrame, true);
-
   this->nodeHandle.get_parameter("filteringFrame", this->filteringFrame);
   stripLeadingSlash(this->sensorFrame, true);
-
   this->nodeHandle.get_parameter("minDistance", this->minDistance);
   this->nodeHandle.get_parameter("maxDistance", this->maxDistance);
-
-  this->nodeHandle.get_parameter("robot_description",
+  this->nodeHandle.get_parameter("body_model/robot_description_param",
                                  this->robotDescriptionParam);
+  this->nodeHandle.get_parameter("filter/keep_clouds_organized",
+                                 this->keepCloudsOrganized);
 
-  // this->robotDescriptionParam = this->getParamVerbose(
-  //     "body_model/robot_description_param", "robot_description");
+  double tempModelPoseUpdateInterval;
+  this->nodeHandle.get_parameter("filter/model_pose_update_interval",
+                                 tempModelPoseUpdateInterval);
+  this->modelPoseUpdateInterval =
+      rclcpp::Duration::from_seconds(tempModelPoseUpdateInterval);
 
-  // this->keepCloudsOrganized =
-  //     this->getParamVerbose("filter/keep_clouds_organized", true);
+  bool tempDoClipping;
+  this->nodeHandle.get_parameter("filter/do_clipping", tempDoClipping);
+  const bool doClipping = tempDoClipping;
 
-  // this->modelPoseUpdateInterval = this->getParamVerbose(
-  //     "filter/model_pose_update_interval", rclcpp::Duration(0, 0), "s");
+  bool tempDoContainsTest;
+  this->nodeHandle.get_parameter("filter/do_contains_test", tempDoContainsTest);
+  const bool doContainsTest = tempDoContainsTest;
 
-  // const bool doClipping = this->getParamVerbose("filter/do_clipping", true);
+  bool tempDoShadowTest;
+  this->nodeHandle.get_parameter("filter/do_shadow_test", tempDoShadowTest);
+  const bool doShadowTest = tempDoShadowTest;
 
-  // const bool doContainsTest =
-  //     this->getParamVerbose("filter/do_contains_test", true);
+  double tempMaxShadowDistance;
+  this->nodeHandle.get_parameter("filter/max_shadow_distance",
+                                 tempMaxShadowDistance);
+  const double maxShadowDistance = tempMaxShadowDistance;
 
-  // const bool doShadowTest =
-  //     this->getParamVerbose("filter/do_shadow_test", true);
+  double tempReachableTransformTimeout;
+  this->nodeHandle.get_parameter("transforms/timeout/reachable",
+                                 tempReachableTransformTimeout);
+  this->reachableTransformTimeout =
+      rclcpp::Duration::from_seconds(tempReachableTransformTimeout);
 
-  // const double maxShadowDistance = this->getParamVerbose(
-  //     "filter/max_shadow_distance", this->maxDistance, "m");
+  double tempUnreachableTransformTimeout;
+  this->nodeHandle.get_parameter("transforms/timeout/unreachable",
+                                 tempUnreachableTransformTimeout);
+  this->unreachableTransformTimeout =
+      rclcpp::Duration::from_seconds(tempUnreachableTransformTimeout);
 
-  // this->reachableTransformTimeout = this->getParamVerbose(
-  //     "transforms/timeout/reachable", rclcpp::Duration(0.1), "s");
+  this->nodeHandle.get_parameter("transforms/require_all_reachable",
+                                 this->requireAllFramesReachable);
 
-  // this->unreachableTransformTimeout = this->getParamVerbose(
-  //     "transforms/timeout/unreachable", rclcpp::Duration(0.2), "s");
+  this->nodeHandle.get_parameter("bounding_sphere/publish_cut_out_pointcloud",
+                                 this->publishNoBoundingSpherePointcloud);
 
-  // this->requireAllFramesReachable =
-  //     this->getParamVerbose("transforms/require_all_reachable", false);
+  this->nodeHandle.get_parameter("bounding_box/publish_cut_out_pointcloud",
+                                 this->publishNoBoundingBoxPointcloud);
 
-  // this->publishNoBoundingSpherePointcloud = this->getParamVerbose(
-  //     "bounding_sphere/publish_cut_out_pointcloud", false);
+  this->nodeHandle.get_parameter(
+      "oriented_bounding_box/publish_cut_out_pointcloud",
+      this->publishNoOrientedBoundingBoxPointcloud);
 
-  // this->publishNoBoundingBoxPointcloud =
-  //     this->getParamVerbose("bounding_box/publish_cut_out_pointcloud",
-  //     false);
+  this->nodeHandle.get_parameter(
+      "local_bounding_box/publish_cut_out_pointcloud",
+      this->publishNoLocalBoundingBoxPointcloud);
 
-  // this->publishNoOrientedBoundingBoxPointcloud = this->getParamVerbose(
-  //     "oriented_bounding_box/publish_cut_out_pointcloud", false);
+  this->nodeHandle.get_parameter("bounding_sphere/compute",
+                                 this->computeBoundingSphere);
+  this->computeBoundingSphere =
+      this->computeBoundingSphere || this->publishNoBoundingSpherePointcloud;
 
-  // this->publishNoLocalBoundingBoxPointcloud = this->getParamVerbose(
-  //     "local_bounding_box/publish_cut_out_pointcloud", false);
+  this->nodeHandle.get_parameter("bounding_box/compute",
+                                 this->computeBoundingBox);
+  this->computeBoundingBox =
+      this->computeBoundingBox || this->publishNoBoundingBoxPointcloud;
 
-  // this->computeBoundingSphere =
-  //     this->getParamVerbose("bounding_sphere/compute", false) ||
-  //     this->publishNoBoundingSpherePointcloud;
+  this->nodeHandle.get_parameter("oriented_bounding_box/compute",
+                                 this->computeOrientedBoundingBox);
+  this->computeOrientedBoundingBox =
+      this->computeOrientedBoundingBox ||
+      this->publishNoOrientedBoundingBoxPointcloud;
 
-  // this->computeBoundingBox =
-  //     this->getParamVerbose("bounding_box/compute", false) ||
-  //     this->publishNoBoundingBoxPointcloud;
+  this->nodeHandle.get_parameter("local_bounding_box/compute",
+                                 this->computeLocalBoundingBox);
+  this->computeLocalBoundingBox = this->computeLocalBoundingBox ||
+                                  this->publishNoLocalBoundingBoxPointcloud;
 
-  // this->computeOrientedBoundingBox =
-  //     this->getParamVerbose("oriented_bounding_box/compute", false) ||
-  //     this->publishNoOrientedBoundingBoxPointcloud;
+  this->nodeHandle.get_parameter("bounding_sphere/debug",
+                                 this->computeDebugBoundingSphere);
 
-  // this->computeLocalBoundingBox =
-  //     this->getParamVerbose("local_bounding_box/compute", false) ||
-  //     this->publishNoLocalBoundingBoxPointcloud;
+  this->nodeHandle.get_parameter("bounding_box/debug",
+                                 this->computeDebugBoundingBox);
 
-  // this->computeDebugBoundingSphere =
-  //     this->getParamVerbose("bounding_sphere/debug", false);
+  this->nodeHandle.get_parameter("oriented_bounding_box/debug",
+                                 this->computeDebugOrientedBoundingBox);
 
-  // this->computeDebugBoundingBox =
-  //     this->getParamVerbose("bounding_box/debug", false);
+  this->nodeHandle.get_parameter("local_bounding_box/debug",
+                                 this->computeDebugLocalBoundingBox);
 
-  // this->computeDebugOrientedBoundingBox =
-  //     this->getParamVerbose("oriented_bounding_box/debug", false);
+  this->nodeHandle.get_parameter("bounding_sphere/marker",
+                                 this->publishBoundingSphereMarker);
 
-  // this->computeDebugLocalBoundingBox =
-  //     this->getParamVerbose("local_bounding_box/debug", false);
+  this->nodeHandle.get_parameter("bounding_box/marker",
+                                 this->publishBoundingBoxMarker);
 
-  // this->publishBoundingSphereMarker =
-  //     this->getParamVerbose("bounding_sphere/marker", false);
+  this->nodeHandle.get_parameter("oriented_bounding_box/marker",
+                                 this->publishOrientedBoundingBoxMarker);
 
-  // this->publishBoundingBoxMarker =
-  //     this->getParamVerbose("bounding_box/marker", false);
+  this->nodeHandle.get_parameter("local_bounding_box/marker",
+                                 this->publishLocalBoundingBoxMarker);
 
-  // this->publishOrientedBoundingBoxMarker =
-  //     this->getParamVerbose("oriented_bounding_box/marker", false);
+  this->nodeHandle.get_parameter("local_bounding_box/frame_id",
+                                 this->localBoundingBoxFrame);
 
-  // this->publishLocalBoundingBoxMarker =
-  //     this->getParamVerbose("local_bounding_box/marker", false);
-  // this->localBoundingBoxFrame =
-  //     this->getParamVerbose("local_bounding_box/frame_id", this->fixedFrame);
-  // this->publishDebugPclInside =
-  //     this->getParamVerbose("debug/pcl/inside", false);
-  // this->publishDebugPclClip = this->getParamVerbose("debug/pcl/clip", false);
-  // this->publishDebugPclShadow =
-  //     this->getParamVerbose("debug/pcl/shadow", false);
-  // this->publishDebugContainsMarker =
-  //     this->getParamVerbose("debug/marker/contains", false);
-  // this->publishDebugShadowMarker =
-  //     this->getParamVerbose("debug/marker/shadow", false);
-  // this->publishDebugBsphereMarker =
-  //     this->getParamVerbose("debug/marker/bounding_sphere", false);
-  // this->publishDebugBboxMarker =
-  //     this->getParamVerbose("debug/marker/bounding_box", false);
+  this->nodeHandle.get_parameter("debug/pcl/inside",
+                                 this->publishDebugPclInside);
 
-  // const auto inflationPadding =
-  //     this->getParamVerbose("body_model/inflation/padding", 0.0, "m");
-  // const auto inflationScale =
-  //     this->getParamVerbose("body_model/inflation/scale", 1.0);
-  // this->defaultContainsInflation.padding = this->getParamVerbose(
-  //     "body_model/inflation/contains_test/padding", inflationPadding, "m");
-  // this->defaultContainsInflation.scale = this->getParamVerbose(
-  //     "body_model/inflation/contains_test/scale", inflationScale);
-  // this->defaultShadowInflation.padding = this->getParamVerbose(
-  //     "body_model/inflation/shadow_test/padding", inflationPadding, "m");
-  // this->defaultShadowInflation.scale = this->getParamVerbose(
-  //     "body_model/inflation/shadow_test/scale", inflationScale);
-  // this->defaultBsphereInflation.padding = this->getParamVerbose(
-  //     "body_model/inflation/bounding_sphere/padding", inflationPadding, "m");
-  // this->defaultBsphereInflation.scale = this->getParamVerbose(
-  //     "body_model/inflation/bounding_sphere/scale", inflationScale);
-  // this->defaultBboxInflation.padding = this->getParamVerbose(
-  //     "body_model/inflation/bounding_box/padding", inflationPadding, "m");
-  // this->defaultBboxInflation.scale = this->getParamVerbose(
-  //     "body_model/inflation/bounding_box/scale", inflationScale);
+  this->nodeHandle.get_parameter("debug/pcl/clip", this->publishDebugPclClip);
+
+  this->nodeHandle.get_parameter("debug/pcl/shadow",
+                                 this->publishDebugPclShadow);
+
+  this->nodeHandle.get_parameter("debug/marker/contains",
+                                 this->publishDebugContainsMarker);
+
+  this->nodeHandle.get_parameter("debug/marker/shadow",
+                                 this->publishDebugShadowMarker);
+
+  this->nodeHandle.get_parameter("debug/marker/bounding_sphere",
+                                 this->publishDebugBsphereMarker);
+
+  this->nodeHandle.get_parameter("debug/marker/bounding_box",
+                                 this->publishDebugBboxMarker);
+
+  double tempInflationPadding;
+  this->nodeHandle.get_parameter("body_model/inflation/padding",
+                                 tempInflationPadding);
+  const double inflationPadding = tempInflationPadding;
+
+  double tempInflationScale;
+  this->nodeHandle.get_parameter("body_model/inflation/scale",
+                                 tempInflationScale);
+  const double inflationScale = tempInflationScale;
+
+  this->nodeHandle.get_parameter("body_model/inflation/contains_test/padding",
+                                 this->defaultContainsInflation.padding);
+
+  this->nodeHandle.get_parameter("body_model/inflation/contains_test/scale",
+                                 this->defaultContainsInflation.scale);
+
+  this->nodeHandle.get_parameter("body_model/inflation/shadow_test/padding",
+                                 this->defaultShadowInflation.padding);
+
+  this->nodeHandle.get_parameter("body_model/inflation/shadow_test/scale",
+                                 this->defaultShadowInflation.scale);
+
+  this->nodeHandle.get_parameter("body_model/inflation/bounding_sphere/padding",
+                                 this->defaultBsphereInflation.padding);
+
+  this->nodeHandle.get_parameter("body_model/inflation/bounding_sphere/scale",
+                                 this->defaultBsphereInflation.scale);
+
+  this->nodeHandle.get_parameter("body_model/inflation/bounding_box/padding",
+                                 this->defaultBboxInflation.padding);
+
+  this->nodeHandle.get_parameter("body_model/inflation/bounding_box/scale",
+                                 this->defaultBboxInflation.scale);
 
   // read per-link padding
-  // const auto perLinkInflationPadding =
-  // this->getParamVerboseMap("body_model/inflation/per_link/padding",
-  // std::map<std::string, double>(), "m"); for (const auto& inflationPair :
-  // perLinkInflationPadding)
-  // {
+  std::map<std::string, double> perLinkInflationPadding;
+  this->nodeHandle.get_parameters("body_model/inflation/per_link/padding",
+                                  perLinkInflationPadding);
+
+  // for (const auto &inflationPair : perLinkInflationPadding) {
   //   bool containsOnly;
   //   bool shadowOnly;
   //   bool bsphereOnly;
@@ -294,21 +334,17 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
   //   linkName = removeSuffix(linkName, BBOX_SUFFIX, &bboxOnly);
 
   //   if (!shadowOnly && !bsphereOnly && !bboxOnly)
-  //     this->perLinkContainsInflation[linkName] =
-  //         ScaleAndPadding(this->defaultContainsInflation.scale,
-  //         inflationPair.second);
+  //     this->perLinkContainsInflation[linkName] = ScaleAndPadding(
+  //         this->defaultContainsInflation.scale, inflationPair.second);
   //   if (!containsOnly && !bsphereOnly && !bboxOnly)
-  //     this->perLinkShadowInflation[linkName] =
-  //         ScaleAndPadding(this->defaultShadowInflation.scale,
-  //         inflationPair.second);
+  //     this->perLinkShadowInflation[linkName] = ScaleAndPadding(
+  //         this->defaultShadowInflation.scale, inflationPair.second);
   //   if (!containsOnly && !shadowOnly && !bboxOnly)
-  //     this->perLinkBsphereInflation[linkName] =
-  //         ScaleAndPadding(this->defaultBsphereInflation.scale,
-  //         inflationPair.second);
+  //     this->perLinkBsphereInflation[linkName] = ScaleAndPadding(
+  //         this->defaultBsphereInflation.scale, inflationPair.second);
   //   if (!containsOnly && !shadowOnly && !bsphereOnly)
-  //     this->perLinkBboxInflation[linkName] =
-  //         ScaleAndPadding(this->defaultBboxInflation.scale,
-  //         inflationPair.second);
+  //     this->perLinkBboxInflation[linkName] = ScaleAndPadding(
+  //         this->defaultBboxInflation.scale, inflationPair.second);
   // }
 
   // read per-link scale
@@ -348,7 +384,8 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
   //       ScaleAndPadding(inflationPair.second,
   //       this->defaultShadowInflation.padding);
   //     else
-  //       this->perLinkShadowInflation[linkName].scale = inflationPair.second;
+  //       this->perLinkShadowInflation[linkName].scale =
+  //       inflationPair.second;
   //   }
 
   //   if (!containsOnly && !shadowOnly && !bboxOnly)
@@ -359,7 +396,8 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
   //       ScaleAndPadding(inflationPair.second,
   //       this->defaultBsphereInflation.padding);
   //     else
-  //       this->perLinkBsphereInflation[linkName].scale = inflationPair.second;
+  //       this->perLinkBsphereInflation[linkName].scale =
+  //       inflationPair.second;
   //   }
 
   //   if (!containsOnly && !shadowOnly && !bsphereOnly)
@@ -370,12 +408,13 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
   //       ScaleAndPadding(inflationPair.second,
   //       this->defaultBboxInflation.padding);
   //     else
-  //       this->perLinkBboxInflation[linkName].scale = inflationPair.second;
+  //       this->perLinkBboxInflation[linkName].scale =
+  //       inflationPair.second;
   //   }
   // }
 
-  // can contain either whole link names, or scoped names of their collisions
-  // (i.e. "link::collision_1" or "link::my_collision")
+  // can contain either whole link names, or scoped names of their
+  // collisions (i.e. "link::collision_1" or "link::my_collision")
   // this->linksIgnoredInBoundingSphere = this->template
   // getParamVerboseSet<string>("ignored_links/bounding_sphere");
   // this->linksIgnoredInBoundingBox = this->template
@@ -385,8 +424,8 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
   // this->linksIgnoredInShadowTest = this->template
   // getParamVerboseSet<string>("ignored_links/shadow_test", { "laser" });
   // this->linksIgnoredEverywhere = this->template
-  // getParamVerboseSet<string>("ignored_links/everywhere"); this->onlyLinks =
-  // this->template getParamVerboseSet<string>("only_links");
+  // getParamVerboseSet<string>("ignored_links/everywhere"); this->onlyLinks
+  // = this->template getParamVerboseSet<string>("only_links");
 
   // this->robotDescriptionUpdatesFieldName =
   // this->getParamVerbose("body_model/dynamic_robot_description/field_name",
@@ -408,7 +447,8 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
 
   // if (this->computeBoundingBox) {
   //   this->boundingBoxPublisher = this->nodeHandle.template
-  //   advertise<geometry_msgs::msg::PolygonStamped>("robot_bounding_box", 100);
+  //   advertise<geometry_msgs::msg::PolygonStamped>("robot_bounding_box",
+  //   100);
   // }
 
   // if (this->computeOrientedBoundingBox) {
@@ -442,7 +482,8 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
   //   100);
   // }
 
-  // if (this->publishLocalBoundingBoxMarker && this->computeLocalBoundingBox) {
+  // if (this->publishLocalBoundingBoxMarker &&
+  // this->computeLocalBoundingBox) {
   //   this->localBoundingBoxMarkerPublisher = this->nodeHandle.template
   //   advertise<visualization_msgs::msg::Marker>("robot_local_bounding_box_marker",
   //   100);
@@ -450,7 +491,8 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
 
   // if (this->publishNoBoundingBoxPointcloud)
   // {
-  //   this->scanPointCloudNoBoundingBoxPublisher = this->nodeHandle.template
+  //   this->scanPointCloudNoBoundingBoxPublisher =
+  //   this->nodeHandle.template
   //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_no_bbox",
   //   100);
   // }
@@ -473,7 +515,8 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
 
   // if (this->publishNoBoundingSpherePointcloud)
   // {
-  //   this->scanPointCloudNoBoundingSpherePublisher = this->nodeHandle.template
+  //   this->scanPointCloudNoBoundingSpherePublisher =
+  //   this->nodeHandle.template
   //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_no_bsphere",
   //   100);
   // }
@@ -481,19 +524,22 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
   // if (this->publishDebugPclInside)
   // {
   //   this->debugPointCloudInsidePublisher = this->nodeHandle.template
-  //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_inside", 100);
+  //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_inside",
+  //   100);
   // }
 
   // if (this->publishDebugPclClip)
   // {
   //   this->debugPointCloudClipPublisher = this->nodeHandle.template
-  //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_clip", 100);
+  //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_clip",
+  //   100);
   // }
 
   // if (this->publishDebugPclShadow)
   // {
   //   this->debugPointCloudShadowPublisher = this->nodeHandle.template
-  //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_shadow", 100);
+  //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_shadow",
+  //   100);
   // }
 
   // if (this->publishDebugContainsMarker)
@@ -531,13 +577,15 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
   // }
 
   // if (this->computeDebugOrientedBoundingBox) {
-  //   this->orientedBoundingBoxDebugMarkerPublisher = this->nodeHandle.template
+  //   this->orientedBoundingBoxDebugMarkerPublisher =
+  //   this->nodeHandle.template
   //   advertise<visualization_msgs::msg::MarkerArray>(
   //     "robot_oriented_bounding_box_debug", 100);
   // }
 
   // if (this->computeDebugLocalBoundingBox) {
-  //   this->localBoundingBoxDebugMarkerPublisher = this->nodeHandle.template
+  //   this->localBoundingBoxDebugMarkerPublisher =
+  //   this->nodeHandle.template
   //   advertise<visualization_msgs::msg::MarkerArray>(
   //     "robot_local_bounding_box_debug", 100);
   // }
@@ -550,14 +598,14 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
 
   // initialize the 3D body masking tool
   // auto getShapeTransformCallback =
-  // std::bind(&RobotBodyFilter::getShapeTransform, this, std::placeholders::_1,
-  // std::placeholders::_2); shapeMask =
+  // std::bind(&RobotBodyFilter::getShapeTransform, this,
+  // std::placeholders::_1, std::placeholders::_2); shapeMask =
   // std::make_unique<RayCastingShapeMask>(getShapeTransformCallback,
   //     this->minDistance, this->maxDistance,
   //     doClipping, doContainsTest, doShadowTest, maxShadowDistance);
 
-  // // the other case happens when configure() is called again from update()
-  // (e.g. when a new bag file
+  // // the other case happens when configure() is called again from
+  // update() (e.g. when a new bag file
   // // started playing)
   // if (this->tfFramesWatchdog == nullptr) {
   //   std::set<std::string> initialMonitoredFrames;
@@ -577,25 +625,26 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
   // { // initialize the robot body to be masked out
 
   //   std::string robotUrdf;
-  //   while (!this->nodeHandle.getParam(this->robotDescriptionParam, robotUrdf)
+  //   while (!this->nodeHandle.getParam(this->robotDescriptionParam,
+  //   robotUrdf)
   //   || robotUrdf.length() == 0) {
   //     if (this->failWithoutRobotDescription)
   //     {
   //       throw std::runtime_error(
-  //           "RobotBodyFilter: " + this->robotDescriptionParam + " is empty or
-  //           not set.");
+  //           "RobotBodyFilter: " + this->robotDescriptionParam + " is
+  //           empty or not set.");
   //     }
   //     if (!rclcpp::ok())
   //       return false;
 
-  //     ROS_ERROR("RobotBodyFilter: %s is empty or not set. Please, provide the
-  //     robot model. Waiting 1s.",
+  //     ROS_ERROR("RobotBodyFilter: %s is empty or not set. Please, provide
+  //     the robot model. Waiting 1s.",
   //               robotDescriptionParam.c_str());
   //     rclcpp::Duration(1.0).sleep();
   //   }
 
-  //   // happens when configure() is called again from update() (e.g. when a
-  //   new bag file started
+  //   // happens when configure() is called again from update() (e.g. when
+  //   a new bag file started
   //   // playing)
   //   if (!this->shapesToLinks.empty())
   //     this->clearRobotMask();
@@ -603,10 +652,10 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
   // }
 
   // RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Successfully
-  // configured."); RCLCPP_INFO(nodeHandle.get_logger(),"Filtering data in frame
-  // %s", this->filteringFrame.c_str());
-  // RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering into the
-  // following categories:");
+  // configured."); RCLCPP_INFO(nodeHandle.get_logger(),"Filtering data in
+  // frame %s", this->filteringFrame.c_str());
+  // RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering into
+  // the following categories:");
   // RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: \tOUTSIDE");
   // if (doClipping) RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter:
   // \tCLIP"); if (doContainsTest)
@@ -616,20 +665,20 @@ template <typename T> bool RobotBodyFilter<T>::configure() {
 
   // if (this->onlyLinks.empty()) {
   //   if (this->linksIgnoredEverywhere.empty()) {
-  //     RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering applied
-  //     to all links.");
+  //     RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering
+  //     applied to all links.");
   //   } else {
-  //     RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering applied
-  //     to all links except %s.",
+  //     RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering
+  //     applied to all links except %s.",
   //     to_string(this->linksIgnoredEverywhere).c_str());
   //   }
   // } else {
   //   if (this->linksIgnoredEverywhere.empty()) {
-  //     RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering applied
-  //     to links %s.", to_string(this->onlyLinks).c_str());
+  //     RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering
+  //     applied to links %s.", to_string(this->onlyLinks).c_str());
   //   } else {
-  //     RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering applied
-  //     to links %s with these links excluded: %s.",
+  //     RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering
+  //     applied to links %s with these links excluded: %s.",
   //     to_string(this->onlyLinks).c_str(),
   //     to_string(this->linksIgnoredEverywhere).c_str());
   //   }
