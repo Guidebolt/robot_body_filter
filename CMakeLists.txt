@@ -11,15 +11,21 @@ else()
   add_compile_options(-DROBOT_BODY_FILTER_USE_CXX_OPTIONAL=0)
 endif()
 
-set(THIS_PACKAGE_DEPS filters geometric_shapes laser_geometry moveit_core rclcpp sensor_msgs tf2 tf2_ros urdf visualization_msgs)
+set(THIS_PACKAGE_DEPS filters geometric_shapes laser_geometry moveit_core moveit_ros_perception rclcpp sensor_msgs tf2 tf2_ros urdf visualization_msgs)
 set(MESSAGE_DEPS geometry_msgs std_msgs)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
 
+find_package(pcl_conversions REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_DEPS})
         find_package(${Dependency} REQUIRED)
 endforeach()
+
+find_package(PCL REQUIRED COMPONENTS common filters)
+find_package(Threads REQUIRED)
+
+find_package(PkgConfig REQUIRED)
 
 # build
 include_directories(
@@ -28,10 +34,16 @@ include_directories(
         ${Dependency}_INCLUDE_DIRS
 )
 
-add_library(${PROJECT_NAME}_filter src/RobotBodyFilter.cpp)
-ament_target_dependencies(${PROJECT_NAME}_filter ${THIS_PACKAGE_DEPS})
+add_library(${PROJECT_NAME} src/RobotBodyFilter.cpp)
+target_link_libraries(${PROJECT_NAME}
+  ${PCL_LIBRARIES}
+)
+ament_target_dependencies(${PROJECT_NAME}
+  ${THIS_PACKAGE_DEPS}
+  ${MESSAGE_DEPS}
+)
 
-target_include_directories(${PROJECT_NAME}_filter
+target_include_directories(${PROJECT_NAME}
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>

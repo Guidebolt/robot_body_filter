@@ -1,4 +1,3 @@
-#include <geometry_msgs/msg/detail/polygon_stamped__struct.hpp>
 #include <memory>
 #include <rclcpp/time.hpp>
 #include <utility>
