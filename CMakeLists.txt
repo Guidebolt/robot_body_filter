@@ -11,13 +11,11 @@ else()
   add_compile_options(-DROBOT_BODY_FILTER_USE_CXX_OPTIONAL=0)
 endif()
 
-set(THIS_PACKAGE_DEPS filters geometric_shapes laser_geometry moveit_core moveit_ros_perception rclcpp sensor_msgs tf2 tf2_ros urdf visualization_msgs)
+set(THIS_PACKAGE_DEPS filters geometric_shapes laser_geometry moveit_core moveit_ros_perception rclcpp sensor_msgs std_srvs pcl_conversions tf2 tf2_ros urdf visualization_msgs GLUT)
 set(MESSAGE_DEPS geometry_msgs std_msgs)
 
-# find dependencies
 find_package(ament_cmake REQUIRED)
 
-find_package(pcl_conversions REQUIRED)
 foreach(Dependency IN ITEMS ${THIS_PACKAGE_DEPS})
         find_package(${Dependency} REQUIRED)
 endforeach()
@@ -27,36 +25,95 @@ find_package(Threads REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 
-# build
+find_package(rosidl_default_generators REQUIRED)
+rosidl_generate_interfaces(${PROJECT_NAME} "msg/OrientedBoundingBox.msg" "msg/OrientedBoundingBoxStamped.msg" DEPENDENCIES ${MESSAGE_DEPS})
+
 include_directories(
         include
         include/utils
         ${Dependency}_INCLUDE_DIRS
 )
 
-add_library(${PROJECT_NAME} src/RobotBodyFilter.cpp)
-target_link_libraries(${PROJECT_NAME}
-  ${PCL_LIBRARIES}
+set(UTILS_SRCS
+  src/utils/bodies.cpp
+#   src/utils/cloud.cpp
+#   src/utils/shapes.cpp
+#   src/utils/string_utils.cpp
+#   src/utils/tf2_eigen.cpp
+#   src/utils/tf2_sensor_msgs.cpp
+#   src/utils/time_utils.cpp
 )
-ament_target_dependencies(${PROJECT_NAME}
+add_library(${PROJECT_NAME}_utils ${UTILS_SRCS})
+target_link_libraries(${PROJECT_NAME}_utils ${catkin_LIBRARIES} ${LIBFCL_LIBRARIES} ${PCL_LIBRARIES})
+
+add_library(lib${PROJECT_NAME} src/RobotBodyFilter.cpp)
+target_link_libraries(lib${PROJECT_NAME}
+  ${PROJECT_NAME}_utils
+)
+ament_target_dependencies(lib${PROJECT_NAME}
   ${THIS_PACKAGE_DEPS}
-  ${MESSAGE_DEPS}
 )
 
-target_include_directories(${PROJECT_NAME}
-        PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
-        ${THIS_PACKAGE_INCLUDE_DEPENDS}
+target_include_directories(lib${PROJECT_NAME}
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  ${THIS_PACKAGE_INCLUDE_DEPENDS}
 )
 
-find_package(rosidl_default_generators REQUIRED)
+if (BUILD_TESTING) 
+  find_package(ament_cmake_gtest REQUIRED)
 
-# rosidl_generate_interfaces(${PROJECT_NAME}
-#   "msg/OrientedBoundingBox.msg"
-#   "msg/OrientedBoundingBoxStamped.msg"
-#   DEPENDENCIES builtin_interfaces std_msgs geometry_msgs std_srvs tf2_msgs tf2_sensor_msgs tf2_ros tf2_eigen visualization_msgs
-#  )
+#   ament_add_gtest(test_set_utils test/test_set_utils.cpp)
+#   target_link_libraries(test_set_utils ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
+
+#   ament_add_gtest(test_shapes_rbf test/test_shapes.cpp)
+#   target_link_libraries(test_shapes_rbf ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
+
+#   ament_add_gtest(test_urdf_eigen test/test_urdf_eigen.cpp)
+#   target_link_libraries(test_urdf_eigen ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
+
+#   ament_add_gtest(test_time_utils test/test_time_utils.cpp)
+#   target_link_libraries(test_time_utils ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
+
+#   ament_add_gtest(test_tf2_eigen test/test_tf2_eigen.cpp)
+#   target_link_libraries(test_tf2_eigen ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
+
+#   ament_add_gtest(test_string_utils test/test_string_utils.cpp)
+#   target_link_libraries(test_string_utils ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
+
+  ament_add_gtest(test_bodies test/test_bodies.cpp)
+  ament_target_dependencies(test_bodies ${THIS_PACKAGE_DEPS})
+  target_link_libraries(test_bodies lib${PROJECT_NAME})
+
+#   ament_add_gtest(test_cloud test/test_cloud.cpp)
+#   target_link_libraries(test_cloud ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
+
+#   ament_add_gtest(test_tf2_sensor_msgs test/test_tf2_sensor_msgs.cpp)
+#   target_link_libraries(test_tf2_sensor_msgs tf2_sensor_msgs_rbf ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
+
+#   ament_add_gtest(test_xmlrpc_traits test/test_xmlrpc_traits.cpp)
+#   target_link_libraries(test_xmlrpc_traits ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
+
+#   ament_add_gtest(test_filter_utils test/test_filter_utils.test test/test_filter_utils.cpp)
+#   ament_target_dependencies(test_filter_utils ${THIS_PACKAGE_DEPS})
+#   target_link_libraries(test_filter_utils lib${PROJECT_NAME})
+
+#   ament_add_gtest(test_tf_frames_watchdog test/test_tf_frames_watchdog.cpp)
+#   target_link_libraries(test_tf_frames_watchdog TFFramesWatchdog ${catkin_LIBRARIES})
+
+#   ament_add_gtest(test_ray_casting_shape_mask test/test_ray_casting_shape_mask.cpp)
+#   target_link_libraries(test_ray_casting_shape_mask RayCastingShapeMask ${catkin_LIBRARIES})
+#   if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release" OR "${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+#     target_compile_definitions(test_ray_casting_shape_mask PRIVATE RELEASE_BUILD=1)
+#   else()
+#     target_compile_definitions(test_ray_casting_shape_mask PRIVATE RELEASE_BUILD=0)
+#   endif()
+
+#   ament_add_gtest(test_robot_body_filter test/test_robot_body_filter.test test/test_robot_body_filter.cpp)
+#   target_link_libraries(test_robot_body_filter ${PROJECT_NAME} ${catkin_LIBRARIES})
+#   target_compile_options(test_robot_body_filter PRIVATE -fno-var-tracking-assignments)  # speed up build
+endif()
 
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 ament_package()

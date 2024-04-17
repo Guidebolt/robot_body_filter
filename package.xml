@@ -14,7 +14,7 @@
 
   <maintainer email="peckama2@fel.cvut.cz">Martin Pecka</maintainer>
 
-  <buildtool_depend>ament_cmake_auto</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
   <!-- <depend>dynamic_reconfigure</depend> -->
   <depend>filters</depend>
@@ -27,6 +27,7 @@
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
   <depend>urdf</depend>

@@ -5,7 +5,7 @@
 // #include <ros/common.h>
 // #include <map>
 
-// #include <filters/filter_base.h>
+#include <filters/filter_base.hpp>
 
 // #include "robot_body_filter/utils/string_utils.hpp"
 // #include "robot_body_filter/utils/xmlrpc_traits.h"
