@@ -115,5 +115,5 @@ if (BUILD_TESTING)
 #   target_compile_options(test_robot_body_filter PRIVATE -fno-var-tracking-assignments)  # speed up build
 endif()
 
-ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
+ament_export_dependencies(${THIS_PACKAGE_DEPS})
 ament_package()
