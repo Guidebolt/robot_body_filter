@@ -1,9 +1,10 @@
 #ifndef ROBOT_BODY_FILTER_BODIES_H
 #define ROBOT_BODY_FILTER_BODIES_H
 
-#include "obb.hpp"
 #include <geometric_shapes/aabb.h>
 #include <geometric_shapes/bodies.h>
+
+#include "obb.hpp"
 
 #if __has_include(<geometric_shapes/obb.h>)
 #include <geometric_shapes/obb.h>
@@ -21,10 +22,7 @@ typedef bodies::OBB OrientedBoundingBox;
 
 /** \brief Compute AABB for the body at different pose. Can't use setPose()
  * because we want `body` to be const. */
-void computeBoundingBoxAt(const bodies::Body *body,
-                          AxisAlignedBoundingBox &bbox,
-                          const Eigen::Isometry3d &pose);
+void computeBoundingBoxAt(const bodies::Body *body, AxisAlignedBoundingBox &bbox, const Eigen::Isometry3d &pose);
+}  // namespace bodies
 
-} // namespace bodies
-
-#endif //ROBOT_BODY_FILTER_BODIES_H
+#endif  // ROBOT_BODY_FILTER_BODIES_H
