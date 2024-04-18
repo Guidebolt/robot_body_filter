@@ -44,7 +44,8 @@ size_t sizeOfPointField(const sensor_msgs::PointField& field)
   return sizeOfPointField(field.datatype);
 }
 
-size_t sizeOfPointField(int datatype) {
+size_t sizeOfPointField(int datatype)
+{
   if ((datatype == sensor_msgs::PointField::INT8) || (datatype == sensor_msgs::PointField::UINT8))
     return 1u;
   else if ((datatype == sensor_msgs::PointField::INT16) || (datatype == sensor_msgs::PointField::UINT16))
@@ -60,8 +61,7 @@ size_t sizeOfPointField(int datatype) {
 
 void copyChannelData(const Cloud& in, Cloud& out, const std::string& fieldName) {
   if (num_points(out) < num_points(in))
-    throw std::runtime_error("Output cloud needs to be resized to fit the "
-                             "number of points of the input cloud.");
+    throw std::runtime_error("Output cloud needs to be resized to fit the number of points of the input cloud.");
 
   GenericCloudConstIter dataIn(in, fieldName);
   GenericCloudIter dataOut(out, fieldName);
@@ -70,7 +70,7 @@ void copyChannelData(const Cloud& in, Cloud& out, const std::string& fieldName) 
 }
 
 namespace impl {
-template<typename T, typename TT, typename U, typename C, template <typename> class V>
+template<typename T, typename TT, typename U, typename C, template<typename> class V>
 GenericCloudIteratorBase<T, TT, U, C, V>::GenericCloudIteratorBase(C& cloudMsg, const std::string& fieldName)
     : sensor_msgs::impl::PointCloud2IteratorBase<T, TT, U, C, V>(cloudMsg, fieldName) {
 
@@ -88,8 +88,7 @@ void GenericCloudIterator<T>::copyData(const GenericCloudConstIterator<T>& other
 }
 
 template<typename T>
-void GenericCloudIterator<T>::copyData(
-    const GenericCloudIterator<T>& otherIter) const {
+void GenericCloudIterator<T>::copyData(const GenericCloudIterator<T>& otherIter) const {
   memcpy(this->getData(), otherIter.getData(), this->fieldSize);
 }
 
