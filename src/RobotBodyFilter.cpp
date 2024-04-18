@@ -60,8 +60,8 @@ RobotBodyFilter<T>::RobotBodyFilter()
   param_desc.type = rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE;
   this->nodeHandle.declare_parameter("minDistance", 0.0, param_desc);
   this->nodeHandle.declare_parameter("maxDistance", 0.0, param_desc);
-  param_desc.description = "body_model/robot_description_param";
-  this->nodeHandle.declare_parameter("robot_description", "", param_desc);
+  param_desc.description = "body_model/robot_description_param name";
+  this->nodeHandle.declare_parameter("body_model/robot_description_param", "", param_desc);
   this->nodeHandle.declare_parameter("filter/keep_clouds_organized", true);
   param_desc.description = "s";
   this->nodeHandle.declare_parameter("filter/model_pose_update_interval", 0.0, param_desc);
@@ -128,6 +128,10 @@ RobotBodyFilter<T>::RobotBodyFilter()
   this->nodeHandle.declare_parameter("ignored_links/everywhere", "");
   this->nodeHandle.declare_parameter("only_links", "");
   this->nodeHandle.declare_parameter("body_model/dynamic_robot_description/field_name", "robot_model");
+
+  this->nodeHandle.declare_parameter("frames/output", this->filteringFrame);
+  this->nodeHandle.declare_parameter("cloud/point_channels", std::vector<std::string>{"vp_"});
+  this->nodeHandle.declare_parameter("cloud/direction_channels", std::vector<std::string>{"normal_"});
 }
 
 template <typename T>
@@ -376,25 +380,19 @@ bool RobotBodyFilter<T>::configure() {
   this->nodeHandle.get_parameter("body_model/dynamic_robot_description/field_name",
                                  this->robotDescriptionUpdatesFieldName);
 
+  this->nodeHandle.get_parameter("sensor/point_by_point", this->pointByPointScan);
+
 
 
   // subscribe for robot_description param changes
-  // NOTE: Should this be a service instead?
   this->robotDescriptionUpdatesListener = this->nodeHandle.template create_subscription<std_msgs::msg::String>(
       "dynamic_robot_model_server/parameter_updates", 10,
       std::bind(&RobotBodyFilter::robotDescriptionUpdated, this, std::placeholders::_1));
 
-  // this->nodeHandle.subscribe(
-  //     "dynamic_robot_model_server/parameter_updates", 10,
-  //     &RobotBodyFilter::robotDescriptionUpdated, this);
+  // this->reloadRobotModelServiceServer = this->nodeHandle.template create_service<std_srvs::srv::Trigger>(
+  //     "reload_model", std::bind(&RobotBodyFilter::triggerModelReload, this, std::placeholders::_1, std::placeholders::_2));
 
-  // this->robotDescriptionUpdatesListener = this->nodeHandle.subscribe(
-  //   "dynamic_robot_model_server/parameter_updates", 10,
-  //   &RobotBodyFilter::robotDescriptionUpdated, this);
 
-  // this->reloadRobotModelServiceServer =
-  // this->privateNodeHandle.advertiseService(
-  //     "reload_model", &RobotBodyFilter::triggerModelReload, this);
 
   // if (this->computeBoundingSphere) {
   //   this->boundingSpherePublisher =
@@ -554,30 +552,31 @@ bool RobotBodyFilter<T>::configure() {
   // }
 
   // initialize the 3D body masking tool
-  // auto getShapeTransformCallback =
-  // std::bind(&RobotBodyFilter::getShapeTransform, this,
-  // std::placeholders::_1, std::placeholders::_2); shapeMask =
-  // std::make_unique<RayCastingShapeMask>(getShapeTransformCallback,
-  //     this->minDistance, this->maxDistance,
-  //     doClipping, doContainsTest, doShadowTest, maxShadowDistance);
+  auto getShapeTransformCallback =
+  std::bind(&RobotBodyFilter::getShapeTransform, this,
+  std::placeholders::_1, std::placeholders::_2); shapeMask =
+  std::make_unique<RayCastingShapeMask>(getShapeTransformCallback,
+      this->minDistance, this->maxDistance,
+      doClipping, doContainsTest, doShadowTest, maxShadowDistance);
 
-  // // the other case happens when configure() is called again from
+  // the other case happens when configure() is called again from
   // update() (e.g. when a new bag file
-  // // started playing)
-  // if (this->tfFramesWatchdog == nullptr) {
-  //   std::set<std::string> initialMonitoredFrames;
-  //   if (!this->sensorFrame.empty())
-  //   {
-  //     initialMonitoredFrames.insert(this->sensorFrame);
-  //   }
-
-  //   this->tfFramesWatchdog =
-  //   std::make_shared<TFFramesWatchdog>(this->filteringFrame,
-  //       initialMonitoredFrames, this->tfBuffer,
-  //       this->unreachableTransformTimeout,
-  //       rclcpp::Rate(rclcpp::Duration(1.0)));
-  //   this->tfFramesWatchdog->start();
-  // }
+  // started playing)
+  if (this->tfFramesWatchdog == nullptr) {
+    std::set<std::string> initialMonitoredFrames;
+    if (!this->sensorFrame.empty())
+    {
+      initialMonitoredFrames.insert(this->sensorFrame);
+    }
+    //     auto rateVar = rclcpp::Duration::from_seconds(1.0).nanoseconds();
+    //     auto loop_rate = rclcpp::Rate(rateVar);
+    // this->tfFramesWatchdog =
+    // std::make_shared<TFFramesWatchdog>(this->filteringFrame,
+    //     initialMonitoredFrames, this->tfBuffer,
+    //     this->unreachableTransformTimeout,
+    //     loop_rate);
+    this->tfFramesWatchdog->start();
+  }
 
   {  // initialize the robot body to be masked out
 
@@ -610,62 +609,53 @@ bool RobotBodyFilter<T>::configure() {
   if (doContainsTest) RCLCPP_INFO(nodeHandle.get_logger(), "RobotBodyFilter: \tINSIDE");
   if (doShadowTest) RCLCPP_INFO(nodeHandle.get_logger(), "RobotBodyFilter: \tSHADOW");
 
-  // if (this->onlyLinks.empty()) {
-  //   if (this->linksIgnoredEverywhere.empty()) {
-  //     RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering
-  //     applied to all links.");
-  //   } else {
-  //     RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering
-  //     applied to all links except %s.",
-  //     to_string(this->linksIgnoredEverywhere).c_str());
-  //   }
-  // } else {
-  //   if (this->linksIgnoredEverywhere.empty()) {
-  //     RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering
-  //     applied to links %s.", to_string(this->onlyLinks).c_str());
-  //   } else {
-  //     RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering
-  //     applied to links %s with these links excluded: %s.",
-  //     to_string(this->onlyLinks).c_str(),
-  //     to_string(this->linksIgnoredEverywhere).c_str());
-  //   }
-  // }
+  if (this->onlyLinks.empty()) {
+    if (this->linksIgnoredEverywhere.empty()) {
+      RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering applied to all links.");
+    } else {
+      RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering applied to all links except %s.",
+      to_string(this->linksIgnoredEverywhere).c_str());
+    }
+  } else {
+    if (this->linksIgnoredEverywhere.empty()) {
+      RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering applied to links %s.", to_string(this->onlyLinks).c_str());
+    } else {
+      RCLCPP_INFO(nodeHandle.get_logger(),"RobotBodyFilter: Filtering applied to links %s with these links excluded: %s.",
+      to_string(this->onlyLinks).c_str(),
+      to_string(this->linksIgnoredEverywhere).c_str());
+    }
+  }
 
-  // this->timeConfigured = rclcpp::Time::now();
+  this->timeConfigured = this->nodeHandle.now();
 
   return true;
 }
 
 bool RobotBodyFilterLaserScan::configure() {
-  // this->pointByPointScan = this->getParamVerbose("sensor/point_by_point",
-  // true);
-
-  // bool success = RobotBodyFilter::configure();
+  this->nodeHandle.declare_parameter("sensor/point_by_point", true);
+  this->pointByPointScan;
+  bool success = RobotBodyFilter::configure();
   return false;
 }
 
 bool RobotBodyFilterPointCloud2::configure() {
-  // this->pointByPointScan = this->getParamVerbose("sensor/point_by_point",
-  // false);
+  this->nodeHandle.declare_parameter("sensor/point_by_point", false);
 
-  // bool success = RobotBodyFilter::configure();
-  // if (!success)
-  //   return false;
+  bool success = RobotBodyFilter::configure();
+  if (!success) return false;
 
-  // this->outputFrame = this->getParamVerbose("frames/output",
-  // this->filteringFrame);
+  this->nodeHandle.get_parameter("frames/output", this->outputFrame);
+  std::vector<std::string> tempPointChannels;
+  std::vector<std::string> tempDirectionChannels;
+  this->nodeHandle.get_parameter("cloud/point_channels", tempPointChannels);
+  this->nodeHandle.get_parameter("cloud/direction_channels", tempDirectionChannels);
+  const auto pointChannels = tempPointChannels;
+  const auto directionChannels = tempDirectionChannels;
 
-  // const auto pointChannels = this->getParamVerbose("cloud/point_channels",
-  // std::vector<std::string>{"vp_"}); const auto directionChannels =
-  // this->getParamVerbose("cloud/direction_channels",
-  // std::vector<std::string>{"normal_"});
+  for (const auto& channel : pointChannels) this->channelsToTransform[channel] = CloudChannelType::POINT;
+  for (const auto& channel : directionChannels) this->channelsToTransform[channel] = CloudChannelType::DIRECTION;
 
-  // for (const auto& channel : pointChannels)
-  //   this->channelsToTransform[channel] = CloudChannelType::POINT;
-  // for (const auto& channel : directionChannels)
-  //   this->channelsToTransform[channel] = CloudChannelType::DIRECTION;
-
-  // stripLeadingSlash(this->outputFrame, true);
+  stripLeadingSlash(this->outputFrame, true);
 
   return true;
 }

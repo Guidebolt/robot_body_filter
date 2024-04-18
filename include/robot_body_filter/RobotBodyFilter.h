@@ -260,7 +260,7 @@ protected:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr debugBboxMarkerPublisher;
 
   //! Service server for reloading robot model.
-  // ros::ServiceServer reloadRobotModelServiceServer;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reloadRobotModelServiceServer;
 
   //! Whether to compute bounding sphere of the robot.
   bool computeBoundingSphere;
