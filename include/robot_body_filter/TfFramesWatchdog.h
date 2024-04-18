@@ -25,11 +25,12 @@ namespace robot_body_filter {
  */
 class TFFramesWatchdog {
 public:
-  TFFramesWatchdog(std::string robotFrame,
+  TFFramesWatchdog(rclcpp::Node::SharedPtr nodeHandle,
+                   std::string robotFrame,
                    std::set<std::string>  monitoredFrames,
                    std::shared_ptr<tf2_ros::Buffer> tfBuffer,
                    rclcpp::Duration unreachableTfLookupTimeout = rclcpp::Duration(0, 100000000),  // 0.1 sec
-                   rclcpp::Rate unreachableFramesCheckRate = rclcpp::Rate(1.0));
+                   rclcpp::Rate::SharedPtr unreachableFramesCheckRate = std::make_shared<rclcpp::Rate>(1.0));
 
   virtual ~TFFramesWatchdog();
 
@@ -183,13 +184,14 @@ protected:
   //! Timeout for canTransform() for figuring out if an unreachable frame became reachable.
   rclcpp::Duration unreachableTfLookupTimeout;
   //! Rate at which checking for unreachable frames will be done.
-  rclcpp::Rate unreachableFramesCheckRate;
+  rclcpp::Rate::SharedPtr unreachableFramesCheckRate;
 
   //! Lock this mutex any time you want to work with monitoredFrames or reachableFrames.
   mutable std::mutex framesMutex;
 
 private:
   std::thread thisThread;
+  rclcpp::Node::SharedPtr nodeHandle; //Node handle of robotBodyFilter needed for rclcpp logging and time
 };
 
 }
