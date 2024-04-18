@@ -400,8 +400,7 @@ protected:
   void updateTransformCache(const rclcpp::Time& time, const rclcpp::Time& afterScanTime = rclcpp::Time(0));
 
   /**
-   * \brief Callback handling update of the robot_description parameter using
-   * dynamic reconfigure.
+   * \brief Callback handling update of the robot_description parameter using dynamic reconfigure.
    *
    * \param newConfig The updated config.
    */
@@ -490,4 +489,4 @@ protected:
 
 }
 
-#endif
+#endif //ROBOT_BODY_FILTER_ROBOTSELFFILTER_H_
