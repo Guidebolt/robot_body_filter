@@ -376,7 +376,18 @@ bool RobotBodyFilter<T>::configure() {
   this->nodeHandle.get_parameter("body_model/dynamic_robot_description/field_name",
                                  this->robotDescriptionUpdatesFieldName);
 
-  // // subscribe for robot_description param changes
+
+
+  // subscribe for robot_description param changes
+  // NOTE: Should this be a service instead?
+  this->robotDescriptionUpdatesListener = this->nodeHandle.template create_subscription<std_msgs::msg::String>(
+      "dynamic_robot_model_server/parameter_updates", 10,
+      std::bind(&RobotBodyFilter::robotDescriptionUpdated, this, std::placeholders::_1));
+
+  // this->nodeHandle.subscribe(
+  //     "dynamic_robot_model_server/parameter_updates", 10,
+  //     &RobotBodyFilter::robotDescriptionUpdated, this);
+
   // this->robotDescriptionUpdatesListener = this->nodeHandle.subscribe(
   //   "dynamic_robot_model_server/parameter_updates", 10,
   //   &RobotBodyFilter::robotDescriptionUpdated, this);
@@ -1977,79 +1988,60 @@ void RobotBodyFilter<T>::createBodyVisualizationMsg(
   }
 }
 
-// TODO: update for ROS2
-//  template <typename T>
-//  void RobotBodyFilter<T>::robotDescriptionUpdated(
-//      dynamic_reconfigure::ConfigConstPtr newConfig) {
-//    auto robotDescriptionIdx = static_cast<size_t>(-1);
-//    for (size_t i = 0; i < newConfig->strs.size(); ++i) {
-//      if (newConfig->strs[i].name == this->robotDescriptionUpdatesFieldName) {
-//        robotDescriptionIdx = i;
-//        break;
-//      }
-//    }
+// ROS1 requires this dynamic reconfig, I believe we can simply get parameter again in ROS2
+template <typename T>
+void RobotBodyFilter<T>::robotDescriptionUpdated(const std_msgs::msg::String::SharedPtr msg) {
+  const std::string newConfig = msg->data;
+  // robot_description parameter was not found, so we don't have to restart
+  // the filter
+  if (newConfig.empty()) return;
 
-//   // robot_description parameter was not found, so we don't have to restart
-//   the
-//   // filter
-//   if (robotDescriptionIdx == static_cast<size_t>(-1))
-//     return;
+  auto urdf = newConfig;
 
-//   auto urdf = newConfig->strs[robotDescriptionIdx].value;
+  RCLCPP_INFO(nodeHandle.get_logger(),
+              "RobotBodyFilter: Reloading robot model because of "
+              "dynamic_reconfigure update. Filter operation stopped.");
 
-//   RCLCPP_INFO(nodeHandle.get_logger(),
-//               "RobotBodyFilter: Reloading robot model because of "
-//               "dynamic_reconfigure update. Filter operation stopped.");
+  this->tfFramesWatchdog->pause();
+  this->configured_ = false;
 
-//   this->tfFramesWatchdog->pause();
-//   this->configured_ = false;
+  this->clearRobotMask();
+  this->addRobotMaskFromUrdf(urdf);
 
-//   this->clearRobotMask();
-//   this->addRobotMaskFromUrdf(urdf);
+  this->tfFramesWatchdog->unpause();
+  this->timeConfigured = nodeHandle.now();
+  this->configured_ = true;
 
-//   this->tfFramesWatchdog->unpause();
-//   this->timeConfigured = nodeHandle.now();
-//   this->configured_ = true;
+  RCLCPP_INFO(nodeHandle.get_logger(), "RobotBodyFilter: Robot model reloaded, resuming filter operation.");
+}
 
-//   RCLCPP_INFO(
-//       nodeHandle.get_logger(),
-//       "RobotBodyFilter: Robot model reloaded, resuming filter operation.");
-// }
+template <typename T>
+bool RobotBodyFilter<T>::triggerModelReload(std_srvs::srv::Trigger_Request&, std_srvs::srv::Trigger_Response&) {
+  std::string urdf;
+  auto success = this->nodeHandle.getParam(this->robotDescriptionParam, urdf);
 
-// template <typename T>
-// bool RobotBodyFilter<T>::triggerModelReload(std_srvs::srv::Trigger_Request& ,
-//                                             std_srvs::srv::Trigger_Response
-//                                            & ) {
-//   std::string urdf;
-//   auto success = this->nodeHandle.getParam(this->robotDescriptionParam,
-//   urdf);
+  if (!success) {
+    ROS_ERROR_STREAM("RobotBodyFilter: Parameter " << this->robotDescriptionParam << " doesn't exist.");
+    return false;
+  }
 
-//   if (!success) {
-//     ROS_ERROR_STREAM("RobotBodyFilter: Parameter "
-//                      << this->robotDescriptionParam << " doesn't exist.");
-//     return false;
-//   }
+  RCLCPP_INFO(nodeHandle.get_logger(),
+              "RobotBodyFilter: Reloading robot model because of trigger. Filter "
+              "operation stopped.");
 
-//   RCLCPP_INFO(
-//       nodeHandle.get_logger(),
-//       "RobotBodyFilter: Reloading robot model because of trigger. Filter "
-//       "operation stopped.");
+  this->tfFramesWatchdog->pause();
+  this->configured_ = false;
 
-//   this->tfFramesWatchdog->pause();
-//   this->configured_ = false;
+  this->clearRobotMask();
+  this->addRobotMaskFromUrdf(urdf);
 
-//   this->clearRobotMask();
-//   this->addRobotMaskFromUrdf(urdf);
+  this->tfFramesWatchdog->unpause();
+  this->timeConfigured = nodeHandle.now();
+  this->configured_ = true;
 
-//   this->tfFramesWatchdog->unpause();
-//   this->timeConfigured = nodeHandle.now();
-//   this->configured_ = true;
-
-//   RCLCPP_INFO(
-//       nodeHandle.get_logger(),
-//       "RobotBodyFilter: Robot model reloaded, resuming filter operation.");
-//   return true;
-// }
+  RCLCPP_INFO(nodeHandle.get_logger(), "RobotBodyFilter: Robot model reloaded, resuming filter operation.");
+  return true;
+}
 
 template <typename T>
 RobotBodyFilter<T>::~RobotBodyFilter() {
