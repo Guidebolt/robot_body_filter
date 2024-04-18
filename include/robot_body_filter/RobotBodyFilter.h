@@ -42,9 +42,8 @@
 
 namespace robot_body_filter {
 /**
- * \brief Just a helper structure holding together a link, one of its collision
- * elements, and the index of the collision element in the collision array of
- * the link.
+ * \brief Just a helper structure holding together a link, one of its collision elements, 
+ * and the index of the collision element in the collision array of the link.
  */
 struct CollisionBodyWithLink {
   urdf::CollisionSharedPtr collision;
@@ -73,17 +72,13 @@ struct ScaleAndPadding {
   bool operator!=(const ScaleAndPadding &other) const;
 };
 
-/** \brief Suffix added to link/collision names to distinguish their usage in
- * contains tests only. */
+/** \brief Suffix added to link/collision names to distinguish their usage in contains tests only. */
 static const std::string CONTAINS_SUFFIX = "::contains";
-/** \brief Suffix added to link/collision names to distinguish their usage in
- * shadow tests only. */
+/** \brief Suffix added to link/collision names to distinguish their usage in shadow tests only. */
 static const std::string SHADOW_SUFFIX = "::shadow";
-/** \brief Suffix added to link/collision names to distinguish their usage in
- * bounding sphere computation only. */
+/** \brief Suffix added to link/collision names to distinguish their usage in bounding sphere computation only. */
 static const std::string BSPHERE_SUFFIX = "::bounding_sphere";
-/** \brief Suffix added to link/collision names to distinguish their usage in
- * bounding box computation only. */
+/** \brief Suffix added to link/collision names to distinguish their usage in bounding box computation only. */
 static const std::string BBOX_SUFFIX = "::bounding_box";
 
 /**
@@ -157,12 +152,10 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   //! The minimum distance of points from the sensor to keep them (in meters).
   double minDistance;
 
-  //! The maximum distance of points from the sensor origin to apply this filter
-  //! on (in meters).
+  //! The maximum distance of points from the sensor origin to apply this filter on (in meters).
   double maxDistance;
 
-  //! The default inflation that is applied to the collision model for the
-  //! purposes of checking if a point is contained by the robot model (scale 1.0
+  //! The default inflation that is applied to the collision model for the purposes of checking if a point is contained by the robot model (scale 1.0
   //! = no scaling, padding 0.0 = no padding). Every collision element is scaled
   //! individually with the scaling center in its origin. Padding is added
   //! individually to every collision element.
