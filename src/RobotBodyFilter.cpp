@@ -7,14 +7,13 @@
 
 // #include "pluginlib/class_list_macros.h"
 
-
 #include <geometric_shapes/bodies.h>
 #include <geometric_shapes/body_operations.h>
 #include <geometric_shapes/shape_operations.h>
 #include <geometric_shapes/shape_to_marker.h>
 
-#include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <sensor_msgs/point_cloud_conversion.hpp>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <tf2/LinearMath/Transform.h>
@@ -268,7 +267,7 @@ bool RobotBodyFilter<T>::configure() {
   std::map<std::string, double> perLinkInflationPadding;
   this->nodeHandle.get_parameters("body_model/inflation/per_link/padding", perLinkInflationPadding);
 
-  for (const auto &inflationPair : perLinkInflationPadding) {
+  for (const auto& inflationPair : perLinkInflationPadding) {
     bool containsOnly;
     bool shadowOnly;
     bool bsphereOnly;
@@ -297,7 +296,8 @@ bool RobotBodyFilter<T>::configure() {
   std::map<std::string, double> perLinkInflationScale;
   this->nodeHandle.get_parameters("body_model/inflation/per_link/scale", perLinkInflationScale);
 
-  for (const auto &inflationPair : perLinkInflationScale) {
+  for (const auto& inflationPair : perLinkInflationScale)
+  {
     bool containsOnly;
     bool shadowOnly;
     bool bsphereOnly;
@@ -309,31 +309,32 @@ bool RobotBodyFilter<T>::configure() {
     linkName = removeSuffix(linkName, BSPHERE_SUFFIX, &bsphereOnly);
     linkName = removeSuffix(linkName, BBOX_SUFFIX, &bboxOnly);
 
-    if (!shadowOnly && !bsphereOnly && !bboxOnly) {
+    if (!shadowOnly && !bsphereOnly && !bboxOnly)
+    {
       if (this->perLinkContainsInflation.find(linkName) == this->perLinkContainsInflation.end())
-        this->perLinkContainsInflation[linkName] =
-            ScaleAndPadding(inflationPair.second, this->defaultContainsInflation.padding);
+        this->perLinkContainsInflation[linkName] = ScaleAndPadding(inflationPair.second, this->defaultContainsInflation.padding);
       else
         this->perLinkContainsInflation[linkName].scale = inflationPair.second;
     }
 
-    if (!containsOnly && !bsphereOnly && !bboxOnly) {
+    if (!containsOnly && !bsphereOnly && !bboxOnly)
+    {
       if (this->perLinkShadowInflation.find(linkName) == this->perLinkShadowInflation.end())
-        this->perLinkShadowInflation[linkName] =
-            ScaleAndPadding(inflationPair.second, this->defaultShadowInflation.padding);
+        this->perLinkShadowInflation[linkName] = ScaleAndPadding(inflationPair.second, this->defaultShadowInflation.padding);
       else
         this->perLinkShadowInflation[linkName].scale = inflationPair.second;
     }
 
-    if (!containsOnly && !shadowOnly && !bboxOnly) {
+    if (!containsOnly && !shadowOnly && !bboxOnly)
+    {
       if (this->perLinkBsphereInflation.find(linkName) == this->perLinkBsphereInflation.end())
-        this->perLinkBsphereInflation[linkName] =
-            ScaleAndPadding(inflationPair.second, this->defaultBsphereInflation.padding);
+        this->perLinkBsphereInflation[linkName] = ScaleAndPadding(inflationPair.second, this->defaultBsphereInflation.padding);
       else
         this->perLinkBsphereInflation[linkName].scale = inflationPair.second;
     }
 
-    if (!containsOnly && !shadowOnly && !bsphereOnly) {
+    if (!containsOnly && !shadowOnly && !bsphereOnly)
+    {
       if (this->perLinkBboxInflation.find(linkName) == this->perLinkBboxInflation.end())
         this->perLinkBboxInflation[linkName] =
             ScaleAndPadding(inflationPair.second, this->defaultBboxInflation.padding);
@@ -659,13 +660,14 @@ bool RobotBodyFilterPointCloud2::configure() {
 }
 
 template <typename T>
-bool RobotBodyFilter<T>::computeMask(const sensor_msgs::msg::PointCloud2 &projectedPointCloud,
-                                     std::vector<RayCastingShapeMask::MaskValue> &pointMask,
-                                     const std::string &sensorFrame) {
+bool RobotBodyFilter<T>::computeMask(
+  const sensor_msgs::msg::PointCloud2& projectedPointCloud,
+  std::vector<RayCastingShapeMask::MaskValue>& pointMask,
+  const std::string& sensorFrame) {
   // this->modelMutex has to be already locked!
 
   const clock_t stopwatchOverall = clock();
-  const auto &scanTime = projectedPointCloud.header.stamp;
+  const auto& scanTime = projectedPointCloud.header.stamp;
 
   // compute a mask of point indices for points from projectedPointCloud
   // that tells if they are inside or outside robot, or shadow points
@@ -676,7 +678,7 @@ bool RobotBodyFilter<T>::computeMask(const sensor_msgs::msg::PointCloud2 &projec
       const auto sensorTf = this->tfBuffer->lookupTransform(this->filteringFrame, sensorFrame, scanTime,
                                                             remainingTime(scanTime, this->reachableTransformTimeout));
       tf2::fromMsg(sensorTf.transform.translation, sensorPosition);
-    } catch (tf2::TransformException &e) {
+    } catch (tf2::TransformException& e) {
       RCLCPP_ERROR(nodeHandle.get_logger(),
                    "RobotBodyFilter: Could not compute filtering mask due to this "
                    "TF exception: %s",
@@ -775,10 +777,10 @@ bool RobotBodyFilter<T>::computeMask(const sensor_msgs::msg::PointCloud2 &projec
   return true;
 }
 
-bool RobotBodyFilterLaserScan::update(const sensor_msgs::msg::LaserScan &inputScan,
-                                      sensor_msgs::msg::LaserScan &filteredScan) {
-  const auto &headerScanTime = inputScan.header.stamp;
-  const auto &scanTime = rclcpp::Time(inputScan.header.stamp);
+bool RobotBodyFilterLaserScan::update(const sensor_msgs::msg::LaserScan& inputScan,
+                                      sensor_msgs::msg::LaserScan& filteredScan) {
+  const auto& headerScanTime = inputScan.header.stamp;
+  const auto& scanTime = rclcpp::Time(inputScan.header.stamp);
 
   if (!this->configured_) {
     RCLCPP_DEBUG(nodeHandle.get_logger(),
@@ -862,13 +864,13 @@ bool RobotBodyFilterLaserScan::update(const sensor_msgs::msg::LaserScan &inputSc
                                         remainingTime(afterScanTime, this->reachableTransformTimeout), &err)) {
         if (err.find("future") != std::string::npos) {
           const auto delay = nodeHandle.now() - scanTime;
-          auto &clk = *nodeHandle.get_clock();
+          auto& clk = *nodeHandle.get_clock();
           RCLCPP_ERROR_THROTTLE(nodeHandle.get_logger(), clk, 3,
                                 "RobotBodyFilter: Cannot transform laser scan to "
                                 "fixed frame. The scan is too much delayed (%s s). TF error: %s",
                                 to_string(delay).c_str(), err.c_str());
         } else {
-          auto &clk = *nodeHandle.get_clock();
+          auto& clk = *nodeHandle.get_clock();
           RCLCPP_ERROR_THROTTLE(nodeHandle.get_logger(), clk, 3,
                                 "RobotBodyFilter: Cannot transform laser scan to "
                                 "fixed frame. Something's wrong with TFs: %s",
@@ -952,7 +954,7 @@ bool RobotBodyFilterLaserScan::update(const sensor_msgs::msg::LaserScan &inputSc
           }
           ++indexIt;
         }
-      } catch (std::runtime_error &) {
+      } catch (std::runtime_error& ) {
         RCLCPP_ERROR(this->nodeHandle.get_logger(),
                      "RobotBodyFilter: projectedPointCloud doesn't have field "
                      "called 'index',"
@@ -965,10 +967,10 @@ bool RobotBodyFilterLaserScan::update(const sensor_msgs::msg::LaserScan &inputSc
   return true;
 }
 
-bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2 &inputCloud,
-                                        sensor_msgs::msg::PointCloud2 &filteredCloud) {
-  const auto &headerScanTime = inputCloud.header.stamp;
-  const auto &scanTime = rclcpp::Time(headerScanTime);
+bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2& inputCloud,
+                                        sensor_msgs::msg::PointCloud2& filteredCloud) {
+  const auto& headerScanTime = inputCloud.header.stamp;
+  const auto& scanTime = rclcpp::Time(headerScanTime);
 
   if (!this->configured_) {
     RCLCPP_DEBUG(nodeHandle.get_logger(),
@@ -1018,7 +1020,7 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2 &inp
 
   bool hasStampsField = false;
   bool hasVpXField = false, hasVpYField = false, hasVpZField = false;
-  for (const auto &field : inputCloud.fields) {
+  for (const auto& field : inputCloud.fields) {
     if (field.name == "stamps" && field.datatype == sensor_msgs::msg::PointField::FLOAT32)
       hasStampsField = true;
     else if (field.name == "vp_x" && field.datatype == sensor_msgs::msg::PointField::FLOAT32)
@@ -1070,7 +1072,7 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2 &inp
     std::string err;
     if (!this->tfBuffer->canTransform(this->filteringFrame, inputCloud.header.frame_id, scanTime,
                                       remainingTime(scanTime, this->reachableTransformTimeout), &err)) {
-      auto &clk = *nodeHandle.get_clock();
+      auto& clk = *nodeHandle.get_clock();
       RCLCPP_ERROR_THROTTLE(nodeHandle.get_logger(), clk, 3,
                             "RobotBodyFilter: Cannot transform "
                             "point cloud to filtering frame. Something's wrong with TFs: %s",
@@ -1109,7 +1111,7 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2 &inp
     std::string err;
     if (!this->tfBuffer->canTransform(this->outputFrame, tmpCloud.header.frame_id, scanTime,
                                       remainingTime(scanTime, this->reachableTransformTimeout), &err)) {
-      auto &clk = *nodeHandle.get_clock();
+      auto& clk = *nodeHandle.get_clock();
       RCLCPP_ERROR_THROTTLE(nodeHandle.get_logger(), clk, 3,
                             "RobotBodyFilter: Cannot transform "
                             "point cloud to output frame. Something's wrong with TFs: %s",
@@ -1125,7 +1127,7 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2 &inp
 
 template <typename T>
 bool RobotBodyFilter<T>::getShapeTransform(point_containment_filter::ShapeHandle shapeHandle,
-                                           Eigen::Isometry3d &transform) const {
+                                           Eigen::Isometry3d& transform) const {
   // make sure you locked this->modelMutex
 
   // check if the given shapeHandle has been registered to a link during
@@ -1137,7 +1139,7 @@ bool RobotBodyFilter<T>::getShapeTransform(point_containment_filter::ShapeHandle
     return false;
   }
 
-  const auto &collision = this->shapesToLinks.at(shapeHandle);
+  const auto& collision = this->shapesToLinks.at(shapeHandle);
 
   if (this->transformCache.find(collision.cacheKey) == this->transformCache.end()) {
     // do not log the error because shape mask would do it for us
@@ -1152,8 +1154,8 @@ bool RobotBodyFilter<T>::getShapeTransform(point_containment_filter::ShapeHandle
       return false;
     }
 
-    const auto &tf1 = *this->transformCache.at(collision.cacheKey);
-    const auto &tf2 = *this->transformCacheAfterScan.at(collision.cacheKey);
+    const auto& tf1 = *this->transformCache.at(collision.cacheKey);
+    const auto& tf2 = *this->transformCacheAfterScan.at(collision.cacheKey);
     const Eigen::Quaterniond quat1(tf1.rotation().matrix());
     const Eigen::Quaterniond quat2(tf1.rotation().matrix());
     const auto r = this->cacheLookupBetweenScansRatio;
@@ -1167,7 +1169,7 @@ bool RobotBodyFilter<T>::getShapeTransform(point_containment_filter::ShapeHandle
 }
 
 template <typename T>
-void RobotBodyFilter<T>::updateTransformCache(const rclcpp::Time &time, const rclcpp::Time &afterScanTime) {
+void RobotBodyFilter<T>::updateTransformCache(const rclcpp::Time& time, const rclcpp::Time& afterScanTime) {
   // make sure you locked this->modelMutex
 
   // clear the cache so that maskContainment always uses only these tf data and
@@ -1177,17 +1179,17 @@ void RobotBodyFilter<T>::updateTransformCache(const rclcpp::Time &time, const rc
 
   // iterate over all links corresponding to some masking shape and update their
   // cached transforms relative to fixed_frame
-  for (auto &shapeToLink : this->shapesToLinks) {
-    const auto &collisionBody = shapeToLink.second;
-    const auto &collision = collisionBody.collision;
-    const auto &link = collisionBody.link;
+  for (auto& shapeToLink : this->shapesToLinks) {
+    const auto& collisionBody = shapeToLink.second;
+    const auto& collision = collisionBody.collision;
+    const auto& link = collisionBody.link;
 
     // here we assume the tf frames' names correspond to the link names
     const auto linkFrame = link->name;
 
     // the collision object may have a different origin than the visual, we need
     // to account for that
-    const auto &collisionOffsetTransform = urdfPose2EigenTransform(collision->origin);
+    const auto& collisionOffsetTransform = urdfPose2EigenTransform(collision->origin);
 
     {
       auto linkTransformTfOptional = this->tfFramesWatchdog->lookupTransform(
@@ -1196,10 +1198,10 @@ void RobotBodyFilter<T>::updateTransformCache(const rclcpp::Time &time, const rc
       if (!linkTransformTfOptional)  // has no value
         continue;
 
-      const auto &linkTransformTf = linkTransformTfOptional.value();
-      const auto &linkTransformEigen = tf2::transformToEigen(linkTransformTf);
+      const auto& linkTransformTf = linkTransformTfOptional.value();
+      const auto& linkTransformEigen = tf2::transformToEigen(linkTransformTf);
 
-      const auto &transform = linkTransformEigen * collisionOffsetTransform;
+      const auto& transform = linkTransformEigen * collisionOffsetTransform;
 
       this->transformCache[collisionBody.cacheKey] =
           std::allocate_shared<Eigen::Isometry3d>(Eigen::aligned_allocator<Eigen::Isometry3d>(), transform);
@@ -1212,10 +1214,10 @@ void RobotBodyFilter<T>::updateTransformCache(const rclcpp::Time &time, const rc
       if (!linkTransformTfOptional)  // has no value
         continue;
 
-      const auto &linkTransformTf = linkTransformTfOptional.value();
-      const auto &linkTransformEigen = tf2::transformToEigen(linkTransformTf);
+      const auto& linkTransformTf = linkTransformTfOptional.value();
+      const auto& linkTransformEigen = tf2::transformToEigen(linkTransformTf);
 
-      const auto &transform = linkTransformEigen * collisionOffsetTransform;
+      const auto& transform = linkTransformEigen * collisionOffsetTransform;
 
       this->transformCacheAfterScan[collisionBody.cacheKey] =
           std::allocate_shared<Eigen::Isometry3d>(Eigen::aligned_allocator<Eigen::Isometry3d>(), transform);
@@ -1224,7 +1226,7 @@ void RobotBodyFilter<T>::updateTransformCache(const rclcpp::Time &time, const rc
 }
 
 template <typename T>
-void RobotBodyFilter<T>::addRobotMaskFromUrdf(const std::string &urdfModel) {
+void RobotBodyFilter<T>::addRobotMaskFromUrdf(const std::string& urdfModel) {
   if (urdfModel.empty()) {
     RCLCPP_ERROR(nodeHandle.get_logger(),
                  "RobotBodyFilter: Empty string passed as robot model to "
@@ -1256,12 +1258,12 @@ void RobotBodyFilter<T>::addRobotMaskFromUrdf(const std::string &urdfModel) {
     std::unordered_set<MultiShapeHandle> ignoreInShadowTest;
 
     // add all model's collision links as masking shapes
-    for (const auto &links : parsedUrdfModel.links_) {
-      const auto &link = links.second;
+    for (const auto& links : parsedUrdfModel.links_) {
+      const auto& link = links.second;
 
       // every link can have multiple collision elements
       size_t collisionIndex = 0;
-      for (const auto &collision : link->collision_array) {
+      for (const auto& collision : link->collision_array) {
         if (collision->geometry == nullptr) {
           RCLCPP_WARN(nodeHandle.get_logger(),
                       "RobotBodyFilter: Collision element without geometry found "
@@ -1286,7 +1288,7 @@ void RobotBodyFilter<T>::addRobotMaskFromUrdf(const std::string &urdfModel) {
         std::set<std::string> collisionNamesSet;
         std::set<std::string> collisionNamesContains;
         std::set<std::string> collisionNamesShadow;
-        for (const auto &name : collisionNames) {
+        for (const auto& name : collisionNames) {
           collisionNamesSet.insert(name);
           collisionNamesContains.insert(name + CONTAINS_SUFFIX);
           collisionNamesShadow.insert(name + SHADOW_SUFFIX);
@@ -1372,7 +1374,7 @@ void RobotBodyFilter<T>::addRobotMaskFromUrdf(const std::string &urdfModel) {
     this->shapeMask->updateInternalShapeLists();
 
     std::set<std::string> monitoredFrames;
-    for (const auto &shapeToLink : this->shapesToLinks) monitoredFrames.insert(shapeToLink.second.link->name);
+    for (const auto& shapeToLink : this->shapesToLinks) monitoredFrames.insert(shapeToLink.second.link->name);
     // Issue #6: Monitor sensor frame even if it is not a part of the model
     if (!this->sensorFrame.empty()) monitoredFrames.insert(this->sensorFrame);
 
@@ -1386,8 +1388,8 @@ void RobotBodyFilter<T>::clearRobotMask() {
     std::lock_guard<std::mutex> guard(*this->modelMutex);
 
     std::unordered_set<MultiShapeHandle> removedMultiShapes;
-    for (const auto &shapeToLink : this->shapesToLinks) {
-      const auto &multiShape = shapeToLink.second.multiHandle;
+    for (const auto& shapeToLink : this->shapesToLinks) {
+      const auto& multiShape = shapeToLink.second.multiHandle;
       if (removedMultiShapes.find(multiShape) == removedMultiShapes.end()) {
         this->shapeMask->removeShape(multiShape, false);
         removedMultiShapes.insert(multiShape);
@@ -1406,7 +1408,7 @@ void RobotBodyFilter<T>::clearRobotMask() {
 }
 
 template <typename T>
-void RobotBodyFilter<T>::publishDebugMarkers(const rclcpp::Time &scanTime) const {
+void RobotBodyFilter<T>::publishDebugMarkers(const rclcpp::Time& scanTime) const {
   // assume this->modelMutex is locked
 
   if (this->publishDebugContainsMarker) {
@@ -1449,8 +1451,8 @@ void RobotBodyFilter<T>::publishDebugMarkers(const rclcpp::Time &scanTime) const
 }
 
 template <typename T>
-void RobotBodyFilter<T>::publishDebugPointClouds(const sensor_msgs::msg::PointCloud2 &projectedPointCloud,
-                                                 const std::vector<RayCastingShapeMask::MaskValue> &pointMask) const {
+void RobotBodyFilter<T>::publishDebugPointClouds(const sensor_msgs::msg::PointCloud2& projectedPointCloud,
+                                                 const std::vector<RayCastingShapeMask::MaskValue>& pointMask) const {
   if (this->publishDebugPclInside) {
     sensor_msgs::msg::PointCloud2 insideCloud;
     CREATE_FILTERED_CLOUD(projectedPointCloud, insideCloud, this->keepCloudsOrganized,
@@ -1475,7 +1477,7 @@ void RobotBodyFilter<T>::publishDebugPointClouds(const sensor_msgs::msg::PointCl
 
 template <typename T>
 void RobotBodyFilter<T>::computeAndPublishBoundingSphere(
-    const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const {
+    const sensor_msgs::msg::PointCloud2& projectedPointCloud) const {
   if (!this->computeBoundingSphere && !this->computeDebugBoundingSphere) return;
 
   // assume this->modelMutex is locked
@@ -1488,13 +1490,13 @@ void RobotBodyFilter<T>::computeAndPublishBoundingSphere(
     this->shapeMask->updateBodyPoses();
   }
 
-  const auto &scanTime = projectedPointCloud.header.stamp;
+  const auto& scanTime = projectedPointCloud.header.stamp;
   std::vector<bodies::BoundingSphere> spheres;
   {
     visualization_msgs::msg::MarkerArray boundingSphereDebugMsg;
-    for (const auto &shapeHandleAndBody : this->shapeMask->getBodiesForBoundingSphere()) {
-      const auto &shapeHandle = shapeHandleAndBody.first;
-      const auto &body = shapeHandleAndBody.second;
+    for (const auto& shapeHandleAndBody : this->shapeMask->getBodiesForBoundingSphere()) {
+      const auto& shapeHandle = shapeHandleAndBody.first;
+      const auto& body = shapeHandleAndBody.second;
 
       if (this->shapesIgnoredInBoundingSphere.find(shapeHandle) != this->shapesIgnoredInBoundingSphere.end()) continue;
 
@@ -1577,7 +1579,7 @@ void RobotBodyFilter<T>::computeAndPublishBoundingSphere(
 }
 
 template <typename T>
-void RobotBodyFilter<T>::computeAndPublishBoundingBox(const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const {
+void RobotBodyFilter<T>::computeAndPublishBoundingBox(const sensor_msgs::msg::PointCloud2& projectedPointCloud) const {
   if (!this->computeBoundingBox && !this->computeDebugBoundingBox) return;
 
   // assume this->modelMutex is locked
@@ -1590,14 +1592,14 @@ void RobotBodyFilter<T>::computeAndPublishBoundingBox(const sensor_msgs::msg::Po
     this->shapeMask->updateBodyPoses();
   }
 
-  const auto &scanTime = projectedPointCloud.header.stamp;
+  const auto& scanTime = projectedPointCloud.header.stamp;
   std::vector<bodies::AxisAlignedBoundingBox> boxes;
 
   {
     visualization_msgs::msg::MarkerArray boundingBoxDebugMsg;
-    for (const auto &shapeHandleAndBody : this->shapeMask->getBodiesForBoundingBox()) {
-      const auto &shapeHandle = shapeHandleAndBody.first;
-      const auto &body = shapeHandleAndBody.second;
+    for (const auto& shapeHandleAndBody : this->shapeMask->getBodiesForBoundingBox()) {
+      const auto& shapeHandle = shapeHandleAndBody.first;
+      const auto& body = shapeHandleAndBody.second;
 
       if (this->shapesIgnoredInBoundingBox.find(shapeHandle) != this->shapesIgnoredInBoundingBox.end()) continue;
 
@@ -1695,7 +1697,7 @@ void RobotBodyFilter<T>::computeAndPublishBoundingBox(const sensor_msgs::msg::Po
 
 template <typename T>
 void RobotBodyFilter<T>::computeAndPublishOrientedBoundingBox(
-    const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const {
+    const sensor_msgs::msg::PointCloud2& projectedPointCloud) const {
   if (!this->computeOrientedBoundingBox && !this->computeDebugOrientedBoundingBox) return;
 
   // assume this->modelMutex is locked
@@ -1708,14 +1710,14 @@ void RobotBodyFilter<T>::computeAndPublishOrientedBoundingBox(
     this->shapeMask->updateBodyPoses();
   }
 
-  const auto &scanTime = projectedPointCloud.header.stamp;
+  const auto& scanTime = projectedPointCloud.header.stamp;
   std::vector<bodies::OrientedBoundingBox> boxes;
 
   {
     visualization_msgs::msg::MarkerArray boundingBoxDebugMsg;
-    for (const auto &shapeHandleAndBody : this->shapeMask->getBodiesForBoundingBox()) {
-      const auto &shapeHandle = shapeHandleAndBody.first;
-      const auto &body = shapeHandleAndBody.second;
+    for (const auto& shapeHandleAndBody : this->shapeMask->getBodiesForBoundingBox()) {
+      const auto& shapeHandle = shapeHandleAndBody.first;
+      const auto& body = shapeHandleAndBody.second;
 
       if (this->shapesIgnoredInBoundingBox.find(shapeHandle) != this->shapesIgnoredInBoundingBox.end()) continue;
 
@@ -1819,12 +1821,12 @@ void RobotBodyFilter<T>::computeAndPublishOrientedBoundingBox(
 
 template <typename T>
 void RobotBodyFilter<T>::computeAndPublishLocalBoundingBox(
-    const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const {
+    const sensor_msgs::msg::PointCloud2& projectedPointCloud) const {
   if (!this->computeLocalBoundingBox && !this->computeDebugLocalBoundingBox) return;
 
   // assume this->modelMutex is locked
 
-  const auto &scanTime = projectedPointCloud.header.stamp;
+  const auto& scanTime = projectedPointCloud.header.stamp;
   std::string err;
   try {
     if (!this->tfBuffer->canTransform(this->localBoundingBoxFrame, this->filteringFrame, scanTime,
@@ -1833,7 +1835,7 @@ void RobotBodyFilter<T>::computeAndPublishLocalBoundingBox(
                    this->localBoundingBoxFrame.c_str(), err.c_str());
       return;
     }
-  } catch (tf2::TransformException &e) {
+  } catch (tf2::TransformException& e) {
     RCLCPP_ERROR(nodeHandle.get_logger(), "Cannot get transform %s->%s. Error is %s.", this->filteringFrame.c_str(),
                  this->localBoundingBoxFrame.c_str(), e.what());
     return;
@@ -1846,9 +1848,9 @@ void RobotBodyFilter<T>::computeAndPublishLocalBoundingBox(
 
   {
     visualization_msgs::msg::MarkerArray boundingBoxDebugMsg;
-    for (const auto &shapeHandleAndBody : this->shapeMask->getBodiesForBoundingBox()) {
-      const auto &shapeHandle = shapeHandleAndBody.first;
-      const auto &body = shapeHandleAndBody.second;
+    for (const auto& shapeHandleAndBody : this->shapeMask->getBodiesForBoundingBox()) {
+      const auto& shapeHandle = shapeHandleAndBody.first;
+      const auto& body = shapeHandleAndBody.second;
 
       if (this->shapesIgnoredInBoundingBox.find(shapeHandle) != this->shapesIgnoredInBoundingBox.end()) continue;
 
@@ -1946,8 +1948,8 @@ void RobotBodyFilter<T>::computeAndPublishLocalBoundingBox(
 
 template <typename T>
 void RobotBodyFilter<T>::createBodyVisualizationMsg(
-    const std::map<point_containment_filter::ShapeHandle, const bodies::Body *> &bodies, const rclcpp::Time &stamp,
-    const std_msgs::msg::ColorRGBA &color, visualization_msgs::msg::MarkerArray &markerArray) const {
+    const std::map<point_containment_filter::ShapeHandle, const bodies::Body *>& bodies, const rclcpp::Time& stamp,
+    const std_msgs::msg::ColorRGBA& color, visualization_msgs::msg::MarkerArray& markerArray) const {
   // when computing the markers for publication, we want to publish them to the
   // time of the scan, so we need to set cacheLookupBetweenScansRatio again to
   // zero
@@ -1956,8 +1958,8 @@ void RobotBodyFilter<T>::createBodyVisualizationMsg(
     this->shapeMask->updateBodyPoses();
   }
 
-  for (const auto &shapeHandleAndBody : bodies) {
-    const auto &shapeHandle = shapeHandleAndBody.first;
+  for (const auto& shapeHandleAndBody : bodies) {
+    const auto& shapeHandle = shapeHandleAndBody.first;
     auto body = shapeHandleAndBody.second;
 
     visualization_msgs::msg::Marker msg;
@@ -2015,9 +2017,9 @@ void RobotBodyFilter<T>::createBodyVisualizationMsg(
 // }
 
 // template <typename T>
-// bool RobotBodyFilter<T>::triggerModelReload(std_srvs::srv::Trigger_Request &,
+// bool RobotBodyFilter<T>::triggerModelReload(std_srvs::srv::Trigger_Request& ,
 //                                             std_srvs::srv::Trigger_Response
-//                                             &) {
+//                                            & ) {
 //   std::string urdf;
 //   auto success = this->nodeHandle.getParam(this->robotDescriptionParam,
 //   urdf);
@@ -2055,52 +2057,52 @@ RobotBodyFilter<T>::~RobotBodyFilter() {
 }
 
 template <typename T>
-ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForContainsTest(const std::string &linkName) const {
+ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForContainsTest(const std::string& linkName) const {
   return this->getLinkInflationForContainsTest({linkName});
 }
 
 template <typename T>
-ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForContainsTest(const std::vector<std::string> &linkNames) const {
+ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForContainsTest(const std::vector<std::string>& linkNames) const {
   return this->getLinkInflation(linkNames, this->defaultContainsInflation, this->perLinkContainsInflation);
 }
 
 template <typename T>
-ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForShadowTest(const std::string &linkName) const {
+ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForShadowTest(const std::string& linkName) const {
   return this->getLinkInflationForShadowTest({linkName});
 }
 
 template <typename T>
-ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForShadowTest(const std::vector<std::string> &linkNames) const {
+ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForShadowTest(const std::vector<std::string>& linkNames) const {
   return this->getLinkInflation(linkNames, this->defaultShadowInflation, this->perLinkShadowInflation);
 }
 
 template <typename T>
-ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForBoundingSphere(const std::string &linkName) const {
+ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForBoundingSphere(const std::string& linkName) const {
   return this->getLinkInflationForBoundingSphere({linkName});
 }
 
 template <typename T>
-ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForBoundingSphere(const std::vector<std::string> &linkNames) const {
+ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForBoundingSphere(const std::vector<std::string>& linkNames) const {
   return this->getLinkInflation(linkNames, this->defaultBsphereInflation, this->perLinkBsphereInflation);
 }
 
 template <typename T>
-ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForBoundingBox(const std::string &linkName) const {
+ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForBoundingBox(const std::string& linkName) const {
   return this->getLinkInflationForBoundingBox({linkName});
 }
 
 template <typename T>
-ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForBoundingBox(const std::vector<std::string> &linkNames) const {
+ScaleAndPadding RobotBodyFilter<T>::getLinkInflationForBoundingBox(const std::vector<std::string>& linkNames) const {
   return this->getLinkInflation(linkNames, this->defaultBboxInflation, this->perLinkBboxInflation);
 }
 
 template <typename T>
 ScaleAndPadding RobotBodyFilter<T>::getLinkInflation(
-    const std::vector<std::string> &linkNames, const ScaleAndPadding &defaultInflation,
-    const std::map<std::string, ScaleAndPadding> &perLinkInflation) const {
+    const std::vector<std::string>& linkNames, const ScaleAndPadding& defaultInflation,
+    const std::map<std::string, ScaleAndPadding>& perLinkInflation) const {
   ScaleAndPadding result = defaultInflation;
 
-  for (const auto &linkName : linkNames) {
+  for (const auto& linkName : linkNames) {
     if (perLinkInflation.find(linkName) != perLinkInflation.end()) result = perLinkInflation.at(linkName);
   }
 
@@ -2109,11 +2111,11 @@ ScaleAndPadding RobotBodyFilter<T>::getLinkInflation(
 
 ScaleAndPadding::ScaleAndPadding(double scale, double padding) : scale(scale), padding(padding) {}
 
-bool ScaleAndPadding::operator==(const ScaleAndPadding &other) const {
+bool ScaleAndPadding::operator==(const ScaleAndPadding& other) const {
   return this->scale == other.scale && this->padding == other.padding;
 }
 
-bool ScaleAndPadding::operator!=(const ScaleAndPadding &other) const { return !(*this == other); }
+bool ScaleAndPadding::operator!=(const ScaleAndPadding& other) const { return !(*this == other); }
 
 }  // namespace robot_body_filter
 
