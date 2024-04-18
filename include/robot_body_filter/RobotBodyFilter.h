@@ -41,27 +41,26 @@
 
 namespace robot_body_filter {
 /**
- * \brief Just a helper structure holding together a link, one of its collision elements,
+* \brief Just a helper structure holding together a link, one of its collision elements,
  * and the index of the collision element in the collision array of the link.
  */
-struct CollisionBodyWithLink
-{
+struct CollisionBodyWithLink {
   urdf::CollisionSharedPtr collision;
   urdf::LinkSharedPtr link;
   size_t indexInCollisionArray;
   MultiShapeHandle multiHandle;
   std::string cacheKey;
 
-  CollisionBodyWithLink() : 
-    indexInCollisionArray(0), cacheKey("__empty__") {
+  CollisionBodyWithLink() :
+      indexInCollisionArray(0), cacheKey("__empty__") {
   }
 
-  CollisionBodyWithLink(urdf::CollisionSharedPtr collision, 
+  CollisionBodyWithLink(urdf::CollisionSharedPtr collision,
                         urdf::LinkSharedPtr link,
-                        const size_t indexInCollisionArray, 
+                        const size_t indexInCollisionArray,
                         const MultiShapeHandle& multiHandle):
-      collision(collision), link(link), indexInCollisionArray(indexInCollisionArray), 
-      multiHandle(multiHandle) 
+      collision(collision), link(link), indexInCollisionArray(indexInCollisionArray),
+      multiHandle(multiHandle)
   {
     std::ostringstream stream;
     stream << link->name << "-" << indexInCollisionArray;
@@ -95,9 +94,9 @@ static const std::string BBOX_SUFFIX = "::bounding_box";
  *
  * \author Martin Pecka
  */
-template <typename T>
+template<typename T>
 class RobotBodyFilter : public filters::FilterBase<T> {
- public:
+public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   RobotBodyFilter();
@@ -109,7 +108,7 @@ class RobotBodyFilter : public filters::FilterBase<T> {
 
   bool update(const T& data_in, T& data_out) override = 0;
 
- protected:
+protected:
   //! Handle of the node this filter runs in.
   rclcpp::Node nodeHandle;
   rclcpp::Node privateNodeHandle;
@@ -259,7 +258,7 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr debugBsphereMarkerPublisher;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr debugBboxMarkerPublisher;
 
-  // ! Service server for reloading robot model.
+  //! Service server for reloading robot model.
   // ros::ServiceServer reloadRobotModelServiceServer;
 
   //! Whether to compute bounding sphere of the robot.
@@ -341,9 +340,9 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   std::set<point_containment_filter::ShapeHandle> shapesIgnoredInBoundingBox;
 
   //! Caches any link->fixedFrame transforms after a scan message is received. Is queried by robot_shape_mask. Keys are CollisionBodyWithLink#cacheKey.
-  std::map<std::string, std::shared_ptr<Eigen::Isometry3d>> transformCache;
+  std::map<std::string, std::shared_ptr<Eigen::Isometry3d> > transformCache;
   //! Caches any link->fixedFrame transforms at the time of scan end. Only used for pointByPoint scans. Is queried by robot_shape_mask. Keys are CollisionBodyWithLink#cacheKey.
-  std::map<std::string, std::shared_ptr<Eigen::Isometry3d>> transformCacheAfterScan;
+  std::map<std::string, std::shared_ptr<Eigen::Isometry3d> > transformCacheAfterScan;
 
   //! If the scan is pointByPoint, set this variable to the ratio between scan start and end time you're looking for with getShapeTransform().
   mutable double cacheLookupBetweenScansRatio;
@@ -367,14 +366,15 @@ class RobotBodyFilter : public filters::FilterBase<T> {
    * \return Whether the computation succeeded.
    */
   bool computeMask(const sensor_msgs::msg::PointCloud2& projectedPointCloud,
-                   std::vector<RayCastingShapeMask::MaskValue>& mask, const std::string& sensorFrame = "");
+                   std::vector<RayCastingShapeMask::MaskValue>& mask,
+                   const std::string& sensorFrame = "");
 
   /** \brief Return the latest cached transform for the link corresponding to the given shape handle.
    *
    * You should call updateTransformCache before calling this function.
    *
-   * \param shapeHandle The handle of the shape for which we want the transform. The handle is from robot_shape_mask. 
-   * \param[out] transform Transform of the corresponding link (wrt filtering frame). 
+   * \param shapeHandle The handle of the shape for which we want the transform. The handle is from robot_shape_mask.
+   * \param[out] transform Transform of the corresponding link (wrt filtering frame).
    * \return If the transform was found.
    */
   bool getShapeTransform(point_containment_filter::ShapeHandle shapeHandle, Eigen::Isometry3d& transform) const;
@@ -386,8 +386,7 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   void addRobotMaskFromUrdf(const std::string& urdfModel);
 
   /**
-   * \brief Remove all parts of the robot mask and clear internal shape and TF
-   * buffers.
+   * \brief Remove all parts of the robot mask and clear internal shape and TF buffers.
    *
    * Make sure no filtering happens when executing this function.
    */
@@ -415,13 +414,15 @@ class RobotBodyFilter : public filters::FilterBase<T> {
    */
   bool triggerModelReload(std_srvs::srv::Trigger_Request&, std_srvs::srv::Trigger_Response&);
 
-  void createBodyVisualizationMsg(const std::map<point_containment_filter::ShapeHandle, const bodies::Body *>& bodies,
-                                  const rclcpp::Time& stamp, const std_msgs::msg::ColorRGBA& color,
-                                  visualization_msgs::msg::MarkerArray& markerArray) const;
+  void createBodyVisualizationMsg(
+      const std::map<point_containment_filter::ShapeHandle, const bodies::Body *>& bodies,
+      const rclcpp::Time& stamp, const std_msgs::msg::ColorRGBA& color,
+      visualization_msgs::msg::MarkerArray& markerArray) const;
 
   void publishDebugMarkers(const rclcpp::Time& scanTime) const;
-  void publishDebugPointClouds(const sensor_msgs::msg::PointCloud2& projectedPointCloud,
-                               const std::vector<RayCastingShapeMask::MaskValue>& pointMask) const;
+  void publishDebugPointClouds(
+      const sensor_msgs::msg::PointCloud2& projectedPointCloud,
+      const std::vector<RayCastingShapeMask::MaskValue>& pointMask) const;
   /**
    * \brief Computation of the bounding sphere, debug spheres, and publishing of
    * pointcloud without bounding sphere.
@@ -435,14 +436,14 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   void computeAndPublishBoundingBox(const sensor_msgs::msg::PointCloud2& projectedPointCloud) const;
 
   /**
-   * \brief Computation of the oriented bounding box, debug boxes, and
-   * publishing of pointcloud without bounding box.
+   * \brief Computation of the oriented bounding box, debug boxes, and publishing of 
+   * pointcloud without bounding box.
    */
   void computeAndPublishOrientedBoundingBox(const sensor_msgs::msg::PointCloud2& projectedPointCloud) const;
 
   /**
-   * \brief Computation of the local bounding box, debug boxes, and publishing
-   * of pointcloud without bounding box.
+   * \brief Computation of the local bounding box, debug boxes, and publishing of
+   * pointcloud without bounding box.
    */
   void computeAndPublishLocalBoundingBox(const sensor_msgs::msg::PointCloud2& projectedPointCloud) const;
 
@@ -455,34 +456,32 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   ScaleAndPadding getLinkInflationForBoundingBox(const std::string& linkName) const;
   ScaleAndPadding getLinkInflationForBoundingBox(const std::vector<std::string>& linkNames) const;
 
- private:
-  ScaleAndPadding getLinkInflation(const std::vector<std::string>& linkNames, const ScaleAndPadding& defaultInflation,
-                                   const std::map<std::string, ScaleAndPadding>& perLinkInflation) const;
+private:
+  ScaleAndPadding getLinkInflation(const std::vector<std::string>& linkNames, const ScaleAndPadding& defaultInflation, const std::map<std::string, ScaleAndPadding>& perLinkInflation) const;
 };
 
 class RobotBodyFilterLaserScan : public RobotBodyFilter<sensor_msgs::msg::LaserScan> {
- public:
+public:
   //! Apply the filter.
   bool update(const sensor_msgs::msg::LaserScan& inputScan, sensor_msgs::msg::LaserScan& filteredScan) override;
 
   bool configure() override;
 
- protected:
+protected:
   laser_geometry::LaserProjection laserProjector;
 
-  // in RobotBodyFilterLaserScan::update we project the scan to a pointcloud
-  // with viewpoints
+  // in RobotBodyFilterLaserScan::update we project the scan to a pointcloud with viewpoints
   const std::unordered_map<std::string, CloudChannelType> channelsToTransform{{"vp_", CloudChannelType::POINT}};
 };
 
 class RobotBodyFilterPointCloud2 : public RobotBodyFilter<sensor_msgs::msg::PointCloud2> {
- public:
+public:
   //! Apply the filter.
   bool update(const sensor_msgs::msg::PointCloud2& inputCloud, sensor_msgs::msg::PointCloud2& filteredCloud) override;
 
   bool configure() override;
 
- protected:
+protected:
   /** \brief Frame into which the output data should be transformed. */
   std::string outputFrame;
 
