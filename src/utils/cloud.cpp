@@ -70,24 +70,24 @@ void copyChannelData(const Cloud& in, Cloud& out, const std::string& fieldName) 
 }
 
 namespace impl {
-template <typename T, typename TT, typename U, typename C, template <typename> class V>
+template<typename T, typename TT, typename U, typename C, template <typename> class V>
 GenericCloudIteratorBase<T, TT, U, C, V>::GenericCloudIteratorBase(C& cloudMsg, const std::string& fieldName)
     : sensor_msgs::impl::PointCloud2IteratorBase<T, TT, U, C, V>(cloudMsg, fieldName) {
 
   this->fieldSize = sizeOfPointField(getField(cloudMsg, fieldName));
 }
 
-template <typename T, typename TT, typename U, typename C, template <typename> class V>
-U *GenericCloudIteratorBase<T, TT, U, C, V>::getData() const {
+template<typename T, typename TT, typename U, typename C, template <typename> class V>
+U* GenericCloudIteratorBase<T, TT, U, C, V>::getData() const {
   return this->data_;
 }
 
-template <typename T>
+template<typename T>
 void GenericCloudIterator<T>::copyData(const GenericCloudConstIterator<T>& otherIter) const {
   memcpy(this->getData(), otherIter.getData(), this->fieldSize);
 }
 
-template <typename T>
+template<typename T>
 void GenericCloudIterator<T>::copyData(
     const GenericCloudIterator<T>& otherIter) const {
   memcpy(this->getData(), otherIter.getData(), this->fieldSize);
