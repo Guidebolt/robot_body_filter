@@ -1,33 +1,37 @@
-#include "robot_body_filter/RobotBodyFilter.h"
-
-#include <geometry_msgs/msg/detail/polygon_stamped__struct.hpp>
-#include <memory>
-#include <rclcpp/time.hpp>
 #include <utility>
 
+#include <functional>
+#include <memory>
+
+#include "robot_body_filter/RobotBodyFilter.h"
+
 // #include "pluginlib/class_list_macros.h"
+
 
 #include <geometric_shapes/bodies.h>
 #include <geometric_shapes/body_operations.h>
 #include <geometric_shapes/shape_operations.h>
 #include <geometric_shapes/shape_to_marker.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <robot_body_filter/utils/bodies.h>
-#include <robot_body_filter/utils/crop_box.h>
-#include <robot_body_filter/utils/shapes.h>
-#include <robot_body_filter/utils/tf2_eigen.h>
-#include <robot_body_filter/utils/tf2_sensor_msgs.h>
-#include <tf2/LinearMath/Transform.h>
-#include <tf2_eigen/tf2_eigen.h>
-#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 
-#include <robot_body_filter/utils/set_utils.hpp>
-#include <robot_body_filter/utils/string_utils.hpp>
-#include <robot_body_filter/utils/time_utils.hpp>
-#include <robot_body_filter/utils/urdf_eigen.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <sensor_msgs/point_cloud_conversion.hpp>
 
+#include <pcl_conversions/pcl_conversions.h>
+#include <tf2/LinearMath/Transform.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
+#include <tf2_eigen/tf2_eigen.h>
+
+#include <robot_body_filter/utils/bodies.h>
+#include <robot_body_filter/utils/crop_box.h>
+#include <robot_body_filter/utils/set_utils.hpp>
+#include <robot_body_filter/utils/shapes.h>
+#include <robot_body_filter/utils/string_utils.hpp>
+#include <robot_body_filter/utils/tf2_eigen.h>
+#include <robot_body_filter/utils/tf2_sensor_msgs.h>
+#include <robot_body_filter/utils/time_utils.hpp>
+#include <robot_body_filter/utils/urdf_eigen.hpp>
+
+#include <rclcpp/time.hpp>
 // using namespace std;
 // using namespace sensor_msgs;
 // using namespace filters;
