@@ -44,7 +44,8 @@ namespace robot_body_filter {
  * \brief Just a helper structure holding together a link, one of its collision elements,
  * and the index of the collision element in the collision array of the link.
  */
-struct CollisionBodyWithLink {
+struct CollisionBodyWithLink
+{
   urdf::CollisionSharedPtr collision;
   urdf::LinkSharedPtr link;
   size_t indexInCollisionArray;
@@ -62,7 +63,8 @@ struct CollisionBodyWithLink {
   }
 };
 
-struct ScaleAndPadding {
+struct ScaleAndPadding
+{
   double scale;
   double padding;
   ScaleAndPadding(double scale = 1.0, double padding = 0.0);
@@ -481,6 +483,6 @@ class RobotBodyFilterPointCloud2 : public RobotBodyFilter<sensor_msgs::msg::Poin
   std::unordered_map<std::string, CloudChannelType> channelsToTransform;
 };
 
-}  // namespace robot_body_filter
+}
 
-#endif  // ROBOT_BODY_FILTER_ROBOTSELFFILTER_H_
+#endif
