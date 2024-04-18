@@ -1,13 +1,12 @@
 #ifndef ROBOT_BODY_FILTER_ROBOTSELFFILTER_H_
 #define ROBOT_BODY_FILTER_ROBOTSELFFILTER_H_
 
-#include <Eigen/Core>
-#include <Eigen/Geometry>
-
-#include <geometry_msgs/msg/polygon_stamped.hpp>
 #include <pcl/filters/crop_box.h>
 
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <filters/filter_base.hpp>
+#include <geometry_msgs/msg/polygon_stamped.hpp>
 // #include <ros/ros.h>
 // #include <dynamic_reconfigure/Config.h>
 #include <geometric_shapes/body_operations.h>
@@ -18,24 +17,25 @@
 // #include <geometry_msgs/msg/detail/point32__struct.hpp>
 // #include <geometry_msgs/msg/detail/point_stamped__struct.hpp>
 // #include <geometry_msgs/msg/detail/polygon_stamped__struct.hpp>
-#include <laser_geometry/laser_geometry.hpp>
 #include <moveit/occupancy_map_monitor/occupancy_map_updater.h>
 #include <moveit/robot_model/aabb.h>
+
+#include <laser_geometry/laser_geometry.hpp>
 #include <rclcpp/rclcpp.hpp>
 // #include <robot_body_filter/OrientedBoundingBoxStamped.h>
 #include <robot_body_filter/RayCastingShapeMask.h>
 // #include <robot_body_filter/SphereStamped.h>
 // #include <robot_body_filter/utils/filter_utils.hpp>
+#include <robot_body_filter/TfFramesWatchdog.h>
 #include <robot_body_filter/utils/tf2_sensor_msgs.h>
-#include <sensor_msgs/msg/laser_scan.hpp>
-#include <std_srvs/srv/trigger.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <urdf/model.h>
+
+#include <sensor_msgs/msg/laser_scan.hpp>
+#include <std_srvs/srv/trigger.hpp>
 #include <visualization_msgs/msg/detail/marker__struct.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
-
-#include <robot_body_filter/TfFramesWatchdog.h>
 
 namespace robot_body_filter {
 /**
@@ -52,12 +52,9 @@ struct CollisionBodyWithLink {
 
   CollisionBodyWithLink() : indexInCollisionArray(0), cacheKey("__empty__") {}
 
-  CollisionBodyWithLink(urdf::CollisionSharedPtr collision,
-                        urdf::LinkSharedPtr link,
-                        const size_t indexInCollisionArray,
-                        const MultiShapeHandle &multiHandle)
-      : collision(collision), link(link),
-        indexInCollisionArray(indexInCollisionArray), multiHandle(multiHandle) {
+  CollisionBodyWithLink(urdf::CollisionSharedPtr collision, urdf::LinkSharedPtr link,
+                        const size_t indexInCollisionArray, const MultiShapeHandle &multiHandle)
+      : collision(collision), link(link), indexInCollisionArray(indexInCollisionArray), multiHandle(multiHandle) {
     std::ostringstream stream;
     stream << link->name << "-" << indexInCollisionArray;
     this->cacheKey = stream.str();
@@ -93,8 +90,9 @@ static const std::string BBOX_SUFFIX = "::bounding_box";
  *
  * \author Martin Pecka
  */
-template <typename T> class RobotBodyFilter : public filters::FilterBase<T> {
-public:
+template <typename T>
+class RobotBodyFilter : public filters::FilterBase<T> {
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
   RobotBodyFilter();
@@ -106,7 +104,7 @@ public:
 
   bool update(const T &data_in, T &data_out) override = 0;
 
-protected:
+ protected:
   //! Handle of the node this filter runs in.
   rclcpp::Node nodeHandle;
   rclcpp::Node privateNodeHandle;
@@ -228,68 +226,45 @@ protected:
   // ros::Publisher boundingSpherePublisher;
   // They use a custom msg type, we can just use an unstamped std shape_msg for
   // simplicity
-  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
-      boundingSpherePublisher;
+  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr boundingSpherePublisher;
   // //! Publisher of robot bounding box (relative to fixed frame).
-  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
-      boundingBoxPublisher;
+  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr boundingBoxPublisher;
   // //! Publisher of robot bounding box (relative to fixed frame).
-  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr
-      orientedBoundingBoxPublisher;
+  rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr orientedBoundingBoxPublisher;
   // //! Publisher of robot bounding box (relative to defined local frame).
-  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr
-      localBoundingBoxPublisher;
+  rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr localBoundingBoxPublisher;
   // //! Publisher of the bounding sphere marker.
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
-      boundingSphereMarkerPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr boundingSphereMarkerPublisher;
   // //! Publisher of the bounding box marker.
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
-      boundingBoxMarkerPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr boundingBoxMarkerPublisher;
   // //! Publisher of the oriented bounding box marker.
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
-      orientedBoundingBoxMarkerPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr orientedBoundingBoxMarkerPublisher;
   //! Publisher of the local bounding box marker.
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr
-      localBoundingBoxMarkerPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr localBoundingBoxMarkerPublisher;
   //! Publisher of the debug bounding box markers.
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-      boundingBoxDebugMarkerPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr boundingBoxDebugMarkerPublisher;
   //! Publisher of the debug oriented bounding box markers.
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-      orientedBoundingBoxDebugMarkerPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr orientedBoundingBoxDebugMarkerPublisher;
   //! Publisher of the debug local bounding box markers.
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-      localBoundingBoxDebugMarkerPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr localBoundingBoxDebugMarkerPublisher;
   //! Publisher of the debug bounding sphere markers.
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-      boundingSphereDebugMarkerPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr boundingSphereDebugMarkerPublisher;
 
   //! Publisher of scan_point_cloud with robot bounding box cut out.
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
-      scanPointCloudNoBoundingBoxPublisher;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scanPointCloudNoBoundingBoxPublisher;
   //! Publisher of scan_point_cloud with robot oriented bounding box cut out.
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
-      scanPointCloudNoOrientedBoundingBoxPublisher;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scanPointCloudNoOrientedBoundingBoxPublisher;
   //! Publisher of scan_point_cloud with robot local bounding box cut out.
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
-      scanPointCloudNoLocalBoundingBoxPublisher;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scanPointCloudNoLocalBoundingBoxPublisher;
   //! Publisher of scan_point_cloud with robot bounding sphere cut out.
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
-      scanPointCloudNoBoundingSpherePublisher;
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
-      debugPointCloudInsidePublisher;
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
-      debugPointCloudClipPublisher;
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
-      debugPointCloudShadowPublisher;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-      debugContainsMarkerPublisher;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-      debugShadowMarkerPublisher;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-      debugBsphereMarkerPublisher;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-      debugBboxMarkerPublisher;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scanPointCloudNoBoundingSpherePublisher;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr debugPointCloudInsidePublisher;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr debugPointCloudClipPublisher;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr debugPointCloudShadowPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr debugContainsMarkerPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr debugShadowMarkerPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr debugBsphereMarkerPublisher;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr debugBboxMarkerPublisher;
 
   // ! Service server for reloading robot model.
   // ros::ServiceServer reloadRobotModelServiceServer;
@@ -370,8 +345,7 @@ protected:
   /// A map that correlates shapes in robot_shape_mask to collision links in
   /// URDF.
   /** Keys are shape handles from shapeMask. */
-  std::map<point_containment_filter::ShapeHandle, CollisionBodyWithLink>
-      shapesToLinks;
+  std::map<point_containment_filter::ShapeHandle, CollisionBodyWithLink> shapesToLinks;
 
   std::set<point_containment_filter::ShapeHandle> shapesIgnoredInBoundingSphere;
   std::set<point_containment_filter::ShapeHandle> shapesIgnoredInBoundingBox;
@@ -382,8 +356,7 @@ protected:
   //! Caches any link->fixedFrame transforms at the time of scan end. Only used
   //! for pointByPoint scans. Is queried by robot_shape_mask. Keys are
   //! CollisionBodyWithLink#cacheKey.
-  std::map<std::string, std::shared_ptr<Eigen::Isometry3d>>
-      transformCacheAfterScan;
+  std::map<std::string, std::shared_ptr<Eigen::Isometry3d>> transformCacheAfterScan;
 
   //! If the scan is pointByPoint, set this variable to the ratio between scan
   //! start and end time you're looking for with getShapeTransform().
@@ -409,8 +382,7 @@ protected:
    * \return Whether the computation succeeded.
    */
   bool computeMask(const sensor_msgs::msg::PointCloud2 &projectedPointCloud,
-                   std::vector<RayCastingShapeMask::MaskValue> &mask,
-                   const std::string &sensorFrame = "");
+                   std::vector<RayCastingShapeMask::MaskValue> &mask, const std::string &sensorFrame = "");
 
   /** \brief Return the latest cached transform for the link corresponding to
    * the given shape handle.
@@ -422,8 +394,7 @@ protected:
    * corresponding link (wrt filtering frame). \return If the transform was
    * found.
    */
-  bool getShapeTransform(point_containment_filter::ShapeHandle shapeHandle,
-                         Eigen::Isometry3d &transform) const;
+  bool getShapeTransform(point_containment_filter::ShapeHandle shapeHandle, Eigen::Isometry3d &transform) const;
 
   /** \brief Update robot_shape_mask with the given URDF model.
    *
@@ -445,9 +416,7 @@ protected:
    * \param afterScantime The after scan time to get transforms for (if zero
    * time is passed, after scan transforms are not computed).
    */
-  void
-  updateTransformCache(const rclcpp::Time &time,
-                       const rclcpp::Time &afterScanTime = rclcpp::Time(0));
+  void updateTransformCache(const rclcpp::Time &time, const rclcpp::Time &afterScanTime = rclcpp::Time(0));
 
   /**
    * \brief Callback handling update of the robot_description parameter using
@@ -462,105 +431,82 @@ protected:
    * \brief Callback for ~reload_model service. Reloads the URDF from parameter.
    * \return Success.
    */
-  bool triggerModelReload(std_srvs::srv::Trigger_Request &,
-                          std_srvs::srv::Trigger_Response &);
+  bool triggerModelReload(std_srvs::srv::Trigger_Request &, std_srvs::srv::Trigger_Response &);
 
-  void createBodyVisualizationMsg(
-      const std::map<point_containment_filter::ShapeHandle,
-                     const bodies::Body *> &bodies,
-      const rclcpp::Time &stamp, const std_msgs::msg::ColorRGBA &color,
-      visualization_msgs::msg::MarkerArray &markerArray) const;
+  void createBodyVisualizationMsg(const std::map<point_containment_filter::ShapeHandle, const bodies::Body *> &bodies,
+                                  const rclcpp::Time &stamp, const std_msgs::msg::ColorRGBA &color,
+                                  visualization_msgs::msg::MarkerArray &markerArray) const;
 
   void publishDebugMarkers(const rclcpp::Time &scanTime) const;
-  void publishDebugPointClouds(
-      const sensor_msgs::msg::PointCloud2 &projectedPointCloud,
-      const std::vector<RayCastingShapeMask::MaskValue> &pointMask) const;
+  void publishDebugPointClouds(const sensor_msgs::msg::PointCloud2 &projectedPointCloud,
+                               const std::vector<RayCastingShapeMask::MaskValue> &pointMask) const;
   /**
    * \brief Computation of the bounding sphere, debug spheres, and publishing of
    * pointcloud without bounding sphere.
    */
-  void computeAndPublishBoundingSphere(
-      const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const;
+  void computeAndPublishBoundingSphere(const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const;
 
   /**
    * \brief Computation of the bounding box, debug boxes, and publishing of
    * pointcloud without bounding box.
    */
-  void computeAndPublishBoundingBox(
-      const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const;
+  void computeAndPublishBoundingBox(const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const;
 
   /**
    * \brief Computation of the oriented bounding box, debug boxes, and
    * publishing of pointcloud without bounding box.
    */
-  void computeAndPublishOrientedBoundingBox(
-      const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const;
+  void computeAndPublishOrientedBoundingBox(const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const;
 
   /**
    * \brief Computation of the local bounding box, debug boxes, and publishing
    * of pointcloud without bounding box.
    */
-  void computeAndPublishLocalBoundingBox(
-      const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const;
+  void computeAndPublishLocalBoundingBox(const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const;
 
-  ScaleAndPadding
-  getLinkInflationForContainsTest(const std::string &linkName) const;
-  ScaleAndPadding getLinkInflationForContainsTest(
-      const std::vector<std::string> &linkNames) const;
-  ScaleAndPadding
-  getLinkInflationForShadowTest(const std::string &linkName) const;
-  ScaleAndPadding getLinkInflationForShadowTest(
-      const std::vector<std::string> &linkNames) const;
-  ScaleAndPadding
-  getLinkInflationForBoundingSphere(const std::string &linkName) const;
-  ScaleAndPadding getLinkInflationForBoundingSphere(
-      const std::vector<std::string> &linkNames) const;
-  ScaleAndPadding
-  getLinkInflationForBoundingBox(const std::string &linkName) const;
-  ScaleAndPadding getLinkInflationForBoundingBox(
-      const std::vector<std::string> &linkNames) const;
+  ScaleAndPadding getLinkInflationForContainsTest(const std::string &linkName) const;
+  ScaleAndPadding getLinkInflationForContainsTest(const std::vector<std::string> &linkNames) const;
+  ScaleAndPadding getLinkInflationForShadowTest(const std::string &linkName) const;
+  ScaleAndPadding getLinkInflationForShadowTest(const std::vector<std::string> &linkNames) const;
+  ScaleAndPadding getLinkInflationForBoundingSphere(const std::string &linkName) const;
+  ScaleAndPadding getLinkInflationForBoundingSphere(const std::vector<std::string> &linkNames) const;
+  ScaleAndPadding getLinkInflationForBoundingBox(const std::string &linkName) const;
+  ScaleAndPadding getLinkInflationForBoundingBox(const std::vector<std::string> &linkNames) const;
 
-private:
-  ScaleAndPadding getLinkInflation(
-      const std::vector<std::string> &linkNames,
-      const ScaleAndPadding &defaultInflation,
-      const std::map<std::string, ScaleAndPadding> &perLinkInflation) const;
+ private:
+  ScaleAndPadding getLinkInflation(const std::vector<std::string> &linkNames, const ScaleAndPadding &defaultInflation,
+                                   const std::map<std::string, ScaleAndPadding> &perLinkInflation) const;
 };
 
-class RobotBodyFilterLaserScan
-    : public RobotBodyFilter<sensor_msgs::msg::LaserScan> {
-public:
+class RobotBodyFilterLaserScan : public RobotBodyFilter<sensor_msgs::msg::LaserScan> {
+ public:
   //! Apply the filter.
-  bool update(const sensor_msgs::msg::LaserScan &inputScan,
-              sensor_msgs::msg::LaserScan &filteredScan) override;
+  bool update(const sensor_msgs::msg::LaserScan &inputScan, sensor_msgs::msg::LaserScan &filteredScan) override;
 
   bool configure() override;
 
-protected:
+ protected:
   laser_geometry::LaserProjection laserProjector;
 
   // in RobotBodyFilterLaserScan::update we project the scan to a pointcloud
   // with viewpoints
-  const std::unordered_map<std::string, CloudChannelType> channelsToTransform{
-      {"vp_", CloudChannelType::POINT}};
+  const std::unordered_map<std::string, CloudChannelType> channelsToTransform{{"vp_", CloudChannelType::POINT}};
 };
 
-class RobotBodyFilterPointCloud2
-    : public RobotBodyFilter<sensor_msgs::msg::PointCloud2> {
-public:
+class RobotBodyFilterPointCloud2 : public RobotBodyFilter<sensor_msgs::msg::PointCloud2> {
+ public:
   //! Apply the filter.
-  bool update(const sensor_msgs::msg::PointCloud2 &inputCloud,
-              sensor_msgs::msg::PointCloud2 &filteredCloud) override;
+  bool update(const sensor_msgs::msg::PointCloud2 &inputCloud, sensor_msgs::msg::PointCloud2 &filteredCloud) override;
 
   bool configure() override;
 
-protected:
+ protected:
   /** \brief Frame into which the output data should be transformed. */
   std::string outputFrame;
 
   std::unordered_map<std::string, CloudChannelType> channelsToTransform;
 };
 
-} // namespace robot_body_filter
+}  // namespace robot_body_filter
 
-#endif // ROBOT_BODY_FILTER_ROBOTSELFFILTER_H_
+#endif  // ROBOT_BODY_FILTER_ROBOTSELFFILTER_H_
