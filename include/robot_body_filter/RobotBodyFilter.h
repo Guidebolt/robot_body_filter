@@ -52,11 +52,17 @@ struct CollisionBodyWithLink
   MultiShapeHandle multiHandle;
   std::string cacheKey;
 
-  CollisionBodyWithLink() : indexInCollisionArray(0), cacheKey("__empty__") {}
+  CollisionBodyWithLink() : 
+    indexInCollisionArray(0), cacheKey("__empty__") {
+  }
 
-  CollisionBodyWithLink(urdf::CollisionSharedPtr collision, urdf::LinkSharedPtr link,
-                        const size_t indexInCollisionArray, const MultiShapeHandle &multiHandle)
-      : collision(collision), link(link), indexInCollisionArray(indexInCollisionArray), multiHandle(multiHandle) {
+  CollisionBodyWithLink(urdf::CollisionSharedPtr collision, 
+                        urdf::LinkSharedPtr link,
+                        const size_t indexInCollisionArray, 
+                        const MultiShapeHandle& multiHandle):
+      collision(collision), link(link), indexInCollisionArray(indexInCollisionArray), 
+      multiHandle(multiHandle) 
+  {
     std::ostringstream stream;
     stream << link->name << "-" << indexInCollisionArray;
     this->cacheKey = stream.str();
@@ -69,8 +75,8 @@ struct ScaleAndPadding
   double padding;
   ScaleAndPadding(double scale = 1.0, double padding = 0.0);
 
-  bool operator==(const ScaleAndPadding &other) const;
-  bool operator!=(const ScaleAndPadding &other) const;
+  bool operator==(const ScaleAndPadding& other) const;
+  bool operator!=(const ScaleAndPadding& other) const;
 };
 
 /** \brief Suffix added to link/collision names to distinguish their usage in contains tests only. */
@@ -101,7 +107,7 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   //! Parameters are described in the readme.
   bool configure() override;
 
-  bool update(const T &data_in, T &data_out) override = 0;
+  bool update(const T& data_in, T& data_out) override = 0;
 
  protected:
   //! Handle of the node this filter runs in.
@@ -360,8 +366,8 @@ class RobotBodyFilter : public filters::FilterBase<T> {
    *                    sensor position from the viewpoint channels.
    * \return Whether the computation succeeded.
    */
-  bool computeMask(const sensor_msgs::msg::PointCloud2 &projectedPointCloud,
-                   std::vector<RayCastingShapeMask::MaskValue> &mask, const std::string &sensorFrame = "");
+  bool computeMask(const sensor_msgs::msg::PointCloud2& projectedPointCloud,
+                   std::vector<RayCastingShapeMask::MaskValue>& mask, const std::string& sensorFrame = "");
 
   /** \brief Return the latest cached transform for the link corresponding to the given shape handle.
    *
@@ -371,13 +377,13 @@ class RobotBodyFilter : public filters::FilterBase<T> {
    * \param[out] transform Transform of the corresponding link (wrt filtering frame). 
    * \return If the transform was found.
    */
-  bool getShapeTransform(point_containment_filter::ShapeHandle shapeHandle, Eigen::Isometry3d &transform) const;
+  bool getShapeTransform(point_containment_filter::ShapeHandle shapeHandle, Eigen::Isometry3d& transform) const;
 
   /** \brief Update robot_shape_mask with the given URDF model.
    *
    * \param urdfModel The robot's URDF loaded as a string.
    */
-  void addRobotMaskFromUrdf(const std::string &urdfModel);
+  void addRobotMaskFromUrdf(const std::string& urdfModel);
 
   /**
    * \brief Remove all parts of the robot mask and clear internal shape and TF
@@ -392,7 +398,7 @@ class RobotBodyFilter : public filters::FilterBase<T> {
    * \param time The time to get transforms for.
    * \param afterScantime The after scan time to get transforms for (if zero time is passed, after scan transforms are not computed).
    */
-  void updateTransformCache(const rclcpp::Time &time, const rclcpp::Time &afterScanTime = rclcpp::Time(0));
+  void updateTransformCache(const rclcpp::Time& time, const rclcpp::Time& afterScanTime = rclcpp::Time(0));
 
   /**
    * \brief Callback handling update of the robot_description parameter using
@@ -407,57 +413,57 @@ class RobotBodyFilter : public filters::FilterBase<T> {
    * \brief Callback for ~reload_model service. Reloads the URDF from parameter.
    * \return Success.
    */
-  bool triggerModelReload(std_srvs::srv::Trigger_Request &, std_srvs::srv::Trigger_Response &);
+  bool triggerModelReload(std_srvs::srv::Trigger_Request&, std_srvs::srv::Trigger_Response&);
 
-  void createBodyVisualizationMsg(const std::map<point_containment_filter::ShapeHandle, const bodies::Body *> &bodies,
-                                  const rclcpp::Time &stamp, const std_msgs::msg::ColorRGBA &color,
-                                  visualization_msgs::msg::MarkerArray &markerArray) const;
+  void createBodyVisualizationMsg(const std::map<point_containment_filter::ShapeHandle, const bodies::Body *>& bodies,
+                                  const rclcpp::Time& stamp, const std_msgs::msg::ColorRGBA& color,
+                                  visualization_msgs::msg::MarkerArray& markerArray) const;
 
-  void publishDebugMarkers(const rclcpp::Time &scanTime) const;
-  void publishDebugPointClouds(const sensor_msgs::msg::PointCloud2 &projectedPointCloud,
-                               const std::vector<RayCastingShapeMask::MaskValue> &pointMask) const;
+  void publishDebugMarkers(const rclcpp::Time& scanTime) const;
+  void publishDebugPointClouds(const sensor_msgs::msg::PointCloud2& projectedPointCloud,
+                               const std::vector<RayCastingShapeMask::MaskValue>& pointMask) const;
   /**
    * \brief Computation of the bounding sphere, debug spheres, and publishing of
    * pointcloud without bounding sphere.
    */
-  void computeAndPublishBoundingSphere(const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const;
+  void computeAndPublishBoundingSphere(const sensor_msgs::msg::PointCloud2& projectedPointCloud) const;
 
   /**
    * \brief Computation of the bounding box, debug boxes, and publishing of
    * pointcloud without bounding box.
    */
-  void computeAndPublishBoundingBox(const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const;
+  void computeAndPublishBoundingBox(const sensor_msgs::msg::PointCloud2& projectedPointCloud) const;
 
   /**
    * \brief Computation of the oriented bounding box, debug boxes, and
    * publishing of pointcloud without bounding box.
    */
-  void computeAndPublishOrientedBoundingBox(const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const;
+  void computeAndPublishOrientedBoundingBox(const sensor_msgs::msg::PointCloud2& projectedPointCloud) const;
 
   /**
    * \brief Computation of the local bounding box, debug boxes, and publishing
    * of pointcloud without bounding box.
    */
-  void computeAndPublishLocalBoundingBox(const sensor_msgs::msg::PointCloud2 &projectedPointCloud) const;
+  void computeAndPublishLocalBoundingBox(const sensor_msgs::msg::PointCloud2& projectedPointCloud) const;
 
-  ScaleAndPadding getLinkInflationForContainsTest(const std::string &linkName) const;
-  ScaleAndPadding getLinkInflationForContainsTest(const std::vector<std::string> &linkNames) const;
-  ScaleAndPadding getLinkInflationForShadowTest(const std::string &linkName) const;
-  ScaleAndPadding getLinkInflationForShadowTest(const std::vector<std::string> &linkNames) const;
-  ScaleAndPadding getLinkInflationForBoundingSphere(const std::string &linkName) const;
-  ScaleAndPadding getLinkInflationForBoundingSphere(const std::vector<std::string> &linkNames) const;
-  ScaleAndPadding getLinkInflationForBoundingBox(const std::string &linkName) const;
-  ScaleAndPadding getLinkInflationForBoundingBox(const std::vector<std::string> &linkNames) const;
+  ScaleAndPadding getLinkInflationForContainsTest(const std::string& linkName) const;
+  ScaleAndPadding getLinkInflationForContainsTest(const std::vector<std::string>& linkNames) const;
+  ScaleAndPadding getLinkInflationForShadowTest(const std::string& linkName) const;
+  ScaleAndPadding getLinkInflationForShadowTest(const std::vector<std::string>& linkNames) const;
+  ScaleAndPadding getLinkInflationForBoundingSphere(const std::string& linkName) const;
+  ScaleAndPadding getLinkInflationForBoundingSphere(const std::vector<std::string>& linkNames) const;
+  ScaleAndPadding getLinkInflationForBoundingBox(const std::string& linkName) const;
+  ScaleAndPadding getLinkInflationForBoundingBox(const std::vector<std::string>& linkNames) const;
 
  private:
-  ScaleAndPadding getLinkInflation(const std::vector<std::string> &linkNames, const ScaleAndPadding &defaultInflation,
-                                   const std::map<std::string, ScaleAndPadding> &perLinkInflation) const;
+  ScaleAndPadding getLinkInflation(const std::vector<std::string>& linkNames, const ScaleAndPadding& defaultInflation,
+                                   const std::map<std::string, ScaleAndPadding>& perLinkInflation) const;
 };
 
 class RobotBodyFilterLaserScan : public RobotBodyFilter<sensor_msgs::msg::LaserScan> {
  public:
   //! Apply the filter.
-  bool update(const sensor_msgs::msg::LaserScan &inputScan, sensor_msgs::msg::LaserScan &filteredScan) override;
+  bool update(const sensor_msgs::msg::LaserScan& inputScan, sensor_msgs::msg::LaserScan& filteredScan) override;
 
   bool configure() override;
 
@@ -472,7 +478,7 @@ class RobotBodyFilterLaserScan : public RobotBodyFilter<sensor_msgs::msg::LaserS
 class RobotBodyFilterPointCloud2 : public RobotBodyFilter<sensor_msgs::msg::PointCloud2> {
  public:
   //! Apply the filter.
-  bool update(const sensor_msgs::msg::PointCloud2 &inputCloud, sensor_msgs::msg::PointCloud2 &filteredCloud) override;
+  bool update(const sensor_msgs::msg::PointCloud2& inputCloud, sensor_msgs::msg::PointCloud2& filteredCloud) override;
 
   bool configure() override;
 
