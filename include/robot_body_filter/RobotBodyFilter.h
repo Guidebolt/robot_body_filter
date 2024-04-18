@@ -14,31 +14,31 @@
 #include <moveit/occupancy_map_monitor/occupancy_map_updater.h>
 #include <moveit/robot_model/aabb.h>
 #include <urdf/model.h>
-
-// #include <robot_body_filter/SphereStamped.h>
-#include <robot_body_filter/TfFramesWatchdog.h>
-
-#include <geometry_msgs/msg/polygon_stamped.hpp>
-#include <filters/filter_base.hpp>
-// #include <ros/ros.h>
-// #include <dynamic_reconfigure/Config.h>
-#include <geometric_shapes/body_operations.h>
+#include <laser_geometry/laser_geometry.hpp>
 #include <geometric_shapes/mesh_operations.h>
 // #include <geometry_msgs/Point32.h>
-// #include <geometry_msgs/PointStamped.h>
 // #include <geometry_msgs/PolygonStamped.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+// #include <dynamic_reconfigure/Config.h>
+// #include <robot_body_filter/SphereStamped.h>
+// #include <robot_body_filter/OrientedBoundingBoxStamped.h>
+// #include <geometry_msgs/PointStamped.h>
+#include <visualization_msgs/msg/marker_array.hpp>
+#include <std_srvs/srv/trigger.hpp>
+
+#include <robot_body_filter/TfFramesWatchdog.h>
+
+// Remove?
+#include <geometry_msgs/msg/polygon_stamped.hpp>
+#include <filters/filter_base.hpp>
+#include <geometric_shapes/body_operations.h>
 // #include <geometry_msgs/msg/detail/point32__struct.hpp>
 // #include <geometry_msgs/msg/detail/point_stamped__struct.hpp>
 // #include <geometry_msgs/msg/detail/polygon_stamped__struct.hpp>
 
-#include <laser_geometry/laser_geometry.hpp>
-// #include <robot_body_filter/OrientedBoundingBoxStamped.h>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
 
-#include <std_srvs/srv/trigger.hpp>
 #include <visualization_msgs/msg/detail/marker__struct.hpp>
-#include <visualization_msgs/msg/marker_array.hpp>
 
 namespace robot_body_filter {
 /**
