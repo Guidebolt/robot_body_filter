@@ -160,7 +160,7 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   ScaleAndPadding defaultContainsInflation;
 
   //! The default inflation that is applied to the collision model for the purposes of checking if a point is shadowed
-  //! by the robot model (scale 1.0  = no scaling, padding 0.0 = no padding). Every collision element is scaled
+  //! by the robot model (scale 1.0 = no scaling, padding 0.0 = no padding). Every collision element is scaled
   //! individually with the scaling center in its origin. Padding is added individually to every collision element.
   ScaleAndPadding defaultShadowInflation;
 
@@ -169,27 +169,27 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   //! individually to every collision element.
   ScaleAndPadding defaultBsphereInflation;
 
-  //! The default inflation that is applied to the collision model for the purposes of computing the bounding box. Every
-  //! collision element is scaled individually with the scaling center in its origin. Padding is added individually to
-  //! every collision element.
+  //! The default inflation that is applied to the collision model for the purposes of computing the bounding box.
+  //! Every collision element is scaled individually with the scaling center in its origin. Padding is added
+  //! individually to every collision element.
   ScaleAndPadding defaultBboxInflation;
 
-  //! Inflation that is applied to a collision element for the purposes of checking if a point is contained by the robot
-  //! model (scale 1.0 = no scaling, padding 0.0 = no padding). Elements not present in this list are scaled and padded
-  //! with defaultContainsInflation.
+  //! Inflation that is applied to a collision element for the purposes of checking if a point is contained by the
+  //! robot model (scale 1.0 = no scaling, padding 0.0 = no padding). Elements not present in this list are scaled and
+  //! padded with defaultContainsInflation.
   std::map<std::string, ScaleAndPadding> perLinkContainsInflation;
 
-  //! Inflation that is applied to a collision element for the purposes of checking if a point is shadowed by the robot
-  //! model (scale 1.0 = no scaling, padding 0.0 = no padding). Elements not present in this list are scaled and padded
-  //! with defaultShadowInflation.
+  //! Inflation that is applied to a collision element for the purposes of checking if a point is shadowed by the
+  //! robot model (scale 1.0 = no scaling, padding 0.0 = no padding). Elements not present in this list are scaled and
+  //! padded with defaultShadowInflation.
   std::map<std::string, ScaleAndPadding> perLinkShadowInflation;
 
-  //! Inflation that is applied to a collision element for the purposes of computing the bounding sphere. Elements not
-  //! present in this list are scaled and padded with defaultBsphereInflation.
+  //! Inflation that is applied to a collision element for the purposes of computing the bounding sphere.
+  //! Elements not present in this list are scaled and padded with defaultBsphereInflation.
   std::map<std::string, ScaleAndPadding> perLinkBsphereInflation;
 
-  //! Inflation that is applied to a collision element for the purposes of computing the bounding box. Elements not
-  //! present in this list are scaled and padded with defaultBboxInflation.
+  //! Inflation that is applied to a collision element for the purposes of computing the bounding box.
+  //! Elements not present in this list are scaled and padded with defaultBboxInflation.
   std::map<std::string, ScaleAndPadding> perLinkBboxInflation;
 
   //! Name of the parameter where the robot model can be found.
@@ -197,8 +197,8 @@ class RobotBodyFilter : public filters::FilterBase<T> {
 
   //! Subscriber for robot_description updates.
   // ros::Subscriber robotDescriptionUpdatesListener;
-  //! Name of the field in the dynamic reconfigure message that contains robot
-  //! model.
+
+  //! Name of the field in the dynamic reconfigure message that contains robot model.
   std::string robotDescriptionUpdatesFieldName;
 
   std::set<std::string> linksIgnoredInBoundingSphere;
@@ -210,8 +210,7 @@ class RobotBodyFilter : public filters::FilterBase<T> {
 
   //! Publisher of robot bounding sphere (relative to fixed frame).
   // ros::Publisher boundingSpherePublisher;
-  // They use a custom msg type, we can just use an unstamped std shape_msg for
-  // simplicity
+  // They use a custom msg type, we can just use an unstamped std shape_msg for simplicity
   rclcpp::Publisher<shape_msgs::msg::SolidPrimitive>::SharedPtr boundingSpherePublisher;
   // //! Publisher of robot bounding box (relative to fixed frame).
   rclcpp::Publisher<geometry_msgs::msg::PolygonStamped>::SharedPtr boundingBoxPublisher;
@@ -281,8 +280,7 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   bool publishBoundingSphereMarker;
   //! Whether to publish scan_point_cloud with robot bounding box cut out.
   bool publishNoBoundingBoxPointcloud;
-  //! Whether to publish scan_point_cloud with robot oriented bounding box cut
-  //! out.
+  //! Whether to publish scan_point_cloud with robot oriented bounding box cut out.
   bool publishNoOrientedBoundingBoxPointcloud;
   //! Whether to publish scan_point_cloud with robot local bounding box cut out.
   bool publishNoLocalBoundingBoxPointcloud;
@@ -308,8 +306,7 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   //! Whether to process data when there are some unreachable frames.
   bool requireAllFramesReachable;
 
-  //! A mutex that has to be locked in order to work with shapesToLinks or
-  //! tfBuffer.
+  //! A mutex that has to be locked in order to work with shapesToLinks or tfBuffer.
   std::shared_ptr<std::mutex> modelMutex;
 
   //! tf buffer length
@@ -328,29 +325,23 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   //! Tool for masking out 3D bodies out of point clouds.
   std::unique_ptr<RayCastingShapeMask> shapeMask;
 
-  /// A map that correlates shapes in robot_shape_mask to collision links in
-  /// URDF.
+  /// A map that correlates shapes in robot_shape_mask to collision links in URDF.
   /** Keys are shape handles from shapeMask. */
   std::map<point_containment_filter::ShapeHandle, CollisionBodyWithLink> shapesToLinks;
 
   std::set<point_containment_filter::ShapeHandle> shapesIgnoredInBoundingSphere;
   std::set<point_containment_filter::ShapeHandle> shapesIgnoredInBoundingBox;
 
-  //! Caches any link->fixedFrame transforms after a scan message is received.
-  //! Is queried by robot_shape_mask. Keys are CollisionBodyWithLink#cacheKey.
+  //! Caches any link->fixedFrame transforms after a scan message is received. Is queried by robot_shape_mask. Keys are CollisionBodyWithLink#cacheKey.
   std::map<std::string, std::shared_ptr<Eigen::Isometry3d>> transformCache;
-  //! Caches any link->fixedFrame transforms at the time of scan end. Only used
-  //! for pointByPoint scans. Is queried by robot_shape_mask. Keys are
-  //! CollisionBodyWithLink#cacheKey.
+  //! Caches any link->fixedFrame transforms at the time of scan end. Only used for pointByPoint scans. Is queried by robot_shape_mask. Keys are CollisionBodyWithLink#cacheKey.
   std::map<std::string, std::shared_ptr<Eigen::Isometry3d>> transformCacheAfterScan;
 
-  //! If the scan is pointByPoint, set this variable to the ratio between scan
-  //! start and end time you're looking for with getShapeTransform().
+  //! If the scan is pointByPoint, set this variable to the ratio between scan start and end time you're looking for with getShapeTransform().
   mutable double cacheLookupBetweenScansRatio;
 
-  //! Used in tests. If false, configure() waits until robot description becomes
-  //! available. If true, configure() fails with std::runtime_exception if robot
-  //! description is not available.
+  //! Used in tests. If false, configure() waits until robot description becomes available. If true,
+  //! configure() fails with std::runtime_exception if robot description is not available.
   bool failWithoutRobotDescription = false;
 
   /**
@@ -370,15 +361,13 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   bool computeMask(const sensor_msgs::msg::PointCloud2 &projectedPointCloud,
                    std::vector<RayCastingShapeMask::MaskValue> &mask, const std::string &sensorFrame = "");
 
-  /** \brief Return the latest cached transform for the link corresponding to
-   * the given shape handle.
+  /** \brief Return the latest cached transform for the link corresponding to the given shape handle.
    *
    * You should call updateTransformCache before calling this function.
    *
-   * \param shapeHandle The handle of the shape for which we want the transform.
-   * The handle is from robot_shape_mask. \param[out] transform Transform of the
-   * corresponding link (wrt filtering frame). \return If the transform was
-   * found.
+   * \param shapeHandle The handle of the shape for which we want the transform. The handle is from robot_shape_mask. 
+   * \param[out] transform Transform of the corresponding link (wrt filtering frame). 
+   * \return If the transform was found.
    */
   bool getShapeTransform(point_containment_filter::ShapeHandle shapeHandle, Eigen::Isometry3d &transform) const;
 
@@ -399,8 +388,7 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   /** \brief Update the cache of link transforms relative to filtering frame.
    *
    * \param time The time to get transforms for.
-   * \param afterScantime The after scan time to get transforms for (if zero
-   * time is passed, after scan transforms are not computed).
+   * \param afterScantime The after scan time to get transforms for (if zero time is passed, after scan transforms are not computed).
    */
   void updateTransformCache(const rclcpp::Time &time, const rclcpp::Time &afterScanTime = rclcpp::Time(0));
 
