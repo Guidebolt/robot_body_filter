@@ -64,6 +64,17 @@ include_directories(
         ${Dependency}_INCLUDE_DIRS
 )
 
+add_library(${PROJECT_NAME}_watchdog src/TFFramesWatchdog.cpp)
+ament_target_dependencies(${PROJECT_NAME}_watchdog ${THIS_PACKAGE_INCLUDE_DEPENDS})
+
+target_include_directories(${PROJECT_NAME}_watchdog
+        PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+        ${THIS_PACKAGE_INCLUDE_DEPENDS}
+)
+
+
 add_library(${PROJECT_NAME}_filter src/RobotBodyFilter.cpp)
 ament_target_dependencies(${PROJECT_NAME}_filter ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
