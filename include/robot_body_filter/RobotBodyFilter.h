@@ -111,7 +111,7 @@ public:
 
 protected:
   //! Handle of the node this filter runs in.
-  rclcpp::Node nodeHandle;
+  rclcpp::Node::SharedPtr nodeHandle;
   rclcpp::Node privateNodeHandle;
 
   /** \brief If true, suppose that every point in the scan was captured at a

@@ -13,7 +13,7 @@ TFFramesWatchdog::TFFramesWatchdog(
                                    std::shared_ptr<tf2_ros::Buffer> tfBuffer,
                                    rclcpp::Duration unreachableTfLookupTimeout,
                                    rclcpp::Rate::SharedPtr unreachableFramesCheckRate):
-    nodeHandle(std::move(nodeHandle)),                               
+    nodeHandle(nodeHandle),                               
     robotFrame(std::move(robotFrame)),
     monitoredFrames(std::move(monitoredFrames)),
     tfBuffer(tfBuffer),
