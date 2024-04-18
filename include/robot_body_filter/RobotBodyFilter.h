@@ -26,6 +26,7 @@
 // #include <geometry_msgs/PointStamped.h>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <std_srvs/srv/trigger.hpp>
+#include <std_msgs/msg/string.hpp>
 
 #include <robot_body_filter/TfFramesWatchdog.h>
 
@@ -110,7 +111,7 @@ public:
 
 protected:
   //! Handle of the node this filter runs in.
-  rclcpp::Node nodeHandle;
+  rclcpp::Node::SharedPtr nodeHandle;
   rclcpp::Node privateNodeHandle;
 
   /** \brief If true, suppose that every point in the scan was captured at a
@@ -203,7 +204,7 @@ protected:
   std::string robotDescriptionParam;
 
   //! Subscriber for robot_description updates.
-  // ros::Subscriber robotDescriptionUpdatesListener;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr robotDescriptionUpdatesListener;
 
   //! Name of the field in the dynamic reconfigure message that contains robot model.
   std::string robotDescriptionUpdatesFieldName;
@@ -259,7 +260,7 @@ protected:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr debugBboxMarkerPublisher;
 
   //! Service server for reloading robot model.
-  // ros::ServiceServer reloadRobotModelServiceServer;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reloadRobotModelServiceServer;
 
   //! Whether to compute bounding sphere of the robot.
   bool computeBoundingSphere;
@@ -402,10 +403,9 @@ protected:
   /**
    * \brief Callback handling update of the robot_description parameter using dynamic reconfigure.
    *
-   * \param newConfig The updated config.
+   * \param msg The new configuration.
    */
-  // void robotDescriptionUpdated(dynamic_reconfigure::ConfigConstPtr
-  // newConfig);
+  void robotDescriptionUpdated(const std_msgs::msg::String::SharedPtr msg);
 
   /**
    * \brief Callback for ~reload_model service. Reloads the URDF from parameter.
