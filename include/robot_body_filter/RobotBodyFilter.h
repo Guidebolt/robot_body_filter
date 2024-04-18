@@ -459,7 +459,8 @@ private:
   ScaleAndPadding getLinkInflation(const std::vector<std::string>& linkNames, const ScaleAndPadding& defaultInflation, const std::map<std::string, ScaleAndPadding>& perLinkInflation) const;
 };
 
-class RobotBodyFilterLaserScan : public RobotBodyFilter<sensor_msgs::msg::LaserScan> {
+class RobotBodyFilterLaserScan : public RobotBodyFilter<sensor_msgs::msg::LaserScan>
+{
 public:
   //! Apply the filter.
   bool update(const sensor_msgs::msg::LaserScan& inputScan, sensor_msgs::msg::LaserScan& filteredScan) override;
@@ -470,10 +471,11 @@ protected:
   laser_geometry::LaserProjection laserProjector;
 
   // in RobotBodyFilterLaserScan::update we project the scan to a pointcloud with viewpoints
-  const std::unordered_map<std::string, CloudChannelType> channelsToTransform{{"vp_", CloudChannelType::POINT}};
+  const std::unordered_map<std::string, CloudChannelType> channelsToTransform { {"vp_", CloudChannelType::POINT} };
 };
 
-class RobotBodyFilterPointCloud2 : public RobotBodyFilter<sensor_msgs::msg::PointCloud2> {
+class RobotBodyFilterPointCloud2 : public RobotBodyFilter<sensor_msgs::msg::PointCloud2>
+{
 public:
   //! Apply the filter.
   bool update(const sensor_msgs::msg::PointCloud2& inputCloud, sensor_msgs::msg::PointCloud2& filteredCloud) override;
