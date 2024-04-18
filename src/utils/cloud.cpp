@@ -1,7 +1,6 @@
 #include <sstream>
 #define private protected
 #include <sensor_msgs/point_cloud2_iterator.h>
-#include <sensor_msgs/PointCloud2.h>
 #undef private
 
 #include <robot_body_filter/utils/cloud.h>
@@ -69,6 +68,7 @@ void copyChannelData(const Cloud& in, Cloud& out, const std::string& fieldName) 
     dataOut.copyData(dataIn);
 }
 
+
 namespace impl {
 template<typename T, typename TT, typename U, typename C, template<typename> class V>
 GenericCloudIteratorBase<T, TT, U, C, V>::GenericCloudIteratorBase(C& cloudMsg, const std::string& fieldName)
@@ -77,7 +77,7 @@ GenericCloudIteratorBase<T, TT, U, C, V>::GenericCloudIteratorBase(C& cloudMsg, 
   this->fieldSize = sizeOfPointField(getField(cloudMsg, fieldName));
 }
 
-template<typename T, typename TT, typename U, typename C, template <typename> class V>
+template<typename T, typename TT, typename U, typename C, template<typename> class V>
 U* GenericCloudIteratorBase<T, TT, U, C, V>::getData() const {
   return this->data_;
 }
