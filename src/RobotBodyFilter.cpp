@@ -912,11 +912,11 @@ bool RobotBodyFilterLaserScan::update(const sensor_msgs::msg::LaserScan& inputSc
         std::string err;
         if (!this->tfBuffer->canTransform(this->filteringFrame, tmpPointCloud.header.frame_id, scanTime,
                                           remainingTime(scanTime, this->reachableTransformTimeout), &err)) {
-          // RCLCPP_ERROR_DELAYED_THROTTLE(
-          //     nodeHandle->get_logger(), 3,
-          //     "RobotBodyFilter: Cannot transform "
-          //     "laser scan to filtering frame. Something's wrong with TFs:
-          //     %s", err.c_str());
+          auto& clk = *nodeHandle->get_clock();
+          RCLCPP_ERROR_THROTTLE(nodeHandle->get_logger(), clk, 3,
+                                "RobotBodyFilter: Cannot transform "
+                                "laser scan to filtering frame. Something's wrong with TFs: %s",
+                                err.c_str());
           return false;
         }
 
@@ -1131,9 +1131,9 @@ bool RobotBodyFilter<T>::getShapeTransform(point_containment_filter::ShapeHandle
   // check if the given shapeHandle has been registered to a link during
   // addRobotMaskFromUrdf call.
   if (this->shapesToLinks.find(shapeHandle) == this->shapesToLinks.end()) {
-    // RCLCPP_ERROR_THROTTLE(
-    //     3, "RobotBodyFilter: Invalid shape handle: " <<
-    //     to_string(shapeHandle));
+    auto& clk = *nodeHandle->get_clock();
+    RCLCPP_ERROR_THROTTLE(nodeHandle->get_logger(), clk,
+        3, "RobotBodyFilter: Invalid shape handle: %s", to_string(shapeHandle).c_str());
     return false;
   }
 
@@ -1717,10 +1717,13 @@ void RobotBodyFilter<T>::computeAndPublishOrientedBoundingBox(
       const auto& shapeHandle = shapeHandleAndBody.first;
       const auto& body = shapeHandleAndBody.second;
 
-      if (this->shapesIgnoredInBoundingBox.find(shapeHandle) != this->shapesIgnoredInBoundingBox.end()) continue;
+      if (this->shapesIgnoredInBoundingBox.find(shapeHandle) != this->shapesIgnoredInBoundingBox.end())
+        continue;
 
+      //TODO: SOLVE THIS  
       bodies::OrientedBoundingBox box;
-      // TODO: This is probabbly wrong, originally computeBoundingBox took in
+      // body->computeBoundingBox(box);
+      // This is probabbly wrong, originally computeBoundingBox took in
       // the OrientedBoundingBox directly but I can't get that to work
       auto aaba = box.toAABB();
       body->computeBoundingBox(aaba);
