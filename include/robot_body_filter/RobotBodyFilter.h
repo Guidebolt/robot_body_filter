@@ -37,12 +37,11 @@
 // #include <geometry_msgs/msg/detail/point_stamped__struct.hpp>
 // #include <geometry_msgs/msg/detail/polygon_stamped__struct.hpp>
 
-
 #include <visualization_msgs/msg/detail/marker__struct.hpp>
 
 namespace robot_body_filter {
 /**
- * \brief Just a helper structure holding together a link, one of its collision elements, 
+ * \brief Just a helper structure holding together a link, one of its collision elements,
  * and the index of the collision element in the collision array of the link.
  */
 struct CollisionBodyWithLink {
@@ -155,51 +154,42 @@ class RobotBodyFilter : public filters::FilterBase<T> {
   //! The maximum distance of points from the sensor origin to apply this filter on (in meters).
   double maxDistance;
 
-  //! The default inflation that is applied to the collision model for the purposes of checking if a point is contained by the robot model (scale 1.0
-  //! = no scaling, padding 0.0 = no padding). Every collision element is scaled
-  //! individually with the scaling center in its origin. Padding is added
-  //! individually to every collision element.
+  //! The default inflation that is applied to the collision model for the purposes of checking if a point is contained
+  //! by the robot model (scale 1.0 = no scaling, padding 0.0 = no padding). Every collision element is scaled
+  //! individually with the scaling center in its origin. Padding is added individually to every collision element.
   ScaleAndPadding defaultContainsInflation;
 
-  //! The default inflation that is applied to the collision model for the
-  //! purposes of checking if a point is shadowed by the robot model (scale 1.0
-  //! = no scaling, padding 0.0 = no padding). Every collision element is scaled
-  //! individually with the scaling center in its origin. Padding is added
-  //! individually to every collision element.
+  //! The default inflation that is applied to the collision model for the purposes of checking if a point is shadowed
+  //! by the robot model (scale 1.0  = no scaling, padding 0.0 = no padding). Every collision element is scaled
+  //! individually with the scaling center in its origin. Padding is added individually to every collision element.
   ScaleAndPadding defaultShadowInflation;
 
-  //! The default inflation that is applied to the collision model for the
-  //! purposes of computing the bounding sphere. Every collision element is
-  //! scaled individually with the scaling center in its origin. Padding is
-  //! added individually to every collision element.
+  //! The default inflation that is applied to the collision model for the purposes of computing the bounding sphere.
+  //! Every collision element is scaled individually with the scaling center in its origin. Padding is added
+  //! individually to every collision element.
   ScaleAndPadding defaultBsphereInflation;
 
-  //! The default inflation that is applied to the collision model for the
-  //! purposes of computing the bounding box. Every collision element is scaled
-  //! individually with the scaling center in its origin. Padding is added
-  //! individually to every collision element.
+  //! The default inflation that is applied to the collision model for the purposes of computing the bounding box. Every
+  //! collision element is scaled individually with the scaling center in its origin. Padding is added individually to
+  //! every collision element.
   ScaleAndPadding defaultBboxInflation;
 
-  //! Inflation that is applied to a collision element for the purposes of
-  //! checking if a point is contained by the robot model (scale 1.0 = no
-  //! scaling, padding 0.0 = no padding). Elements not present in this list are
-  //! scaled and padded with defaultContainsInflation.
+  //! Inflation that is applied to a collision element for the purposes of checking if a point is contained by the robot
+  //! model (scale 1.0 = no scaling, padding 0.0 = no padding). Elements not present in this list are scaled and padded
+  //! with defaultContainsInflation.
   std::map<std::string, ScaleAndPadding> perLinkContainsInflation;
 
-  //! Inflation that is applied to a collision element for the purposes of
-  //! checking if a point is shadowed by the robot model (scale 1.0 = no
-  //! scaling, padding 0.0 = no padding). Elements not present in this list are
-  //! scaled and padded with defaultShadowInflation.
+  //! Inflation that is applied to a collision element for the purposes of checking if a point is shadowed by the robot
+  //! model (scale 1.0 = no scaling, padding 0.0 = no padding). Elements not present in this list are scaled and padded
+  //! with defaultShadowInflation.
   std::map<std::string, ScaleAndPadding> perLinkShadowInflation;
 
-  //! Inflation that is applied to a collision element for the purposes of
-  //! computing the bounding sphere. Elements not present in this list are
-  //! scaled and padded with defaultBsphereInflation.
+  //! Inflation that is applied to a collision element for the purposes of computing the bounding sphere. Elements not
+  //! present in this list are scaled and padded with defaultBsphereInflation.
   std::map<std::string, ScaleAndPadding> perLinkBsphereInflation;
 
-  //! Inflation that is applied to a collision element for the purposes of
-  //! computing the bounding box. Elements not present in this list are scaled
-  //! and padded with defaultBboxInflation.
+  //! Inflation that is applied to a collision element for the purposes of computing the bounding box. Elements not
+  //! present in this list are scaled and padded with defaultBboxInflation.
   std::map<std::string, ScaleAndPadding> perLinkBboxInflation;
 
   //! Name of the parameter where the robot model can be found.
