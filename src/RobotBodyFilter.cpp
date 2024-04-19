@@ -12,13 +12,12 @@
 #include <geometric_shapes/shape_operations.h>
 #include <geometric_shapes/shape_to_marker.h>
 
-#include <sensor_msgs/point_cloud_conversion.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
-#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 #include <robot_body_filter/utils/bodies.h>
 #include <robot_body_filter/utils/crop_box.h>
@@ -630,7 +629,6 @@ bool RobotBodyFilter<T>::configure() {
 
 bool RobotBodyFilterLaserScan::configure() {
   this->nodeHandle->declare_parameter("sensor/point_by_point", true);
-  this->pointByPointScan;
   bool success = RobotBodyFilter::configure();
   return false;
 }
@@ -782,7 +780,7 @@ bool RobotBodyFilterLaserScan::update(const sensor_msgs::msg::LaserScan& inputSc
 
   if (!this->configured_) {
     RCLCPP_DEBUG(nodeHandle->get_logger(),
-                 "RobotBodyFilter: Ignore scan from time %u.%u - filter not yet "
+                 "RobotBodyFilter: Ignore scan from time %f.%ld - filter not yet "
                  "initialized.",
                  scanTime.seconds(), scanTime.nanoseconds());
     return false;
@@ -790,7 +788,7 @@ bool RobotBodyFilterLaserScan::update(const sensor_msgs::msg::LaserScan& inputSc
 
   if ((scanTime < timeConfigured) && ((scanTime + tfBufferLength) >= timeConfigured)) {
     RCLCPP_DEBUG(nodeHandle->get_logger(),
-                 "RobotBodyFilter: Ignore scan from time %u.%u - filter not yet "
+                 "RobotBodyFilter: Ignore scan from time %f.%ld - filter not yet "
                  "initialized.",
                  scanTime.seconds(), scanTime.nanoseconds());
     return false;
@@ -972,7 +970,7 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2& inp
 
   if (!this->configured_) {
     RCLCPP_DEBUG(nodeHandle->get_logger(),
-                 "RobotBodyFilter: Ignore cloud from time %u.%u - filter not yet "
+                 "RobotBodyFilter: Ignore cloud from time %f.%ld - filter not yet "
                  "initialized.",
                  scanTime.seconds(), scanTime.nanoseconds());
     return false;
@@ -980,7 +978,7 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2& inp
 
   if ((scanTime < this->timeConfigured) && ((scanTime + this->tfBufferLength) >= this->timeConfigured)) {
     RCLCPP_DEBUG(nodeHandle->get_logger(),
-                 "RobotBodyFilter: Ignore cloud from time %u.%u - filter not yet "
+                 "RobotBodyFilter: Ignore cloud from time %f.%ld - filter not yet "
                  "initialized.",
                  scanTime.seconds(), scanTime.nanoseconds());
     return false;
@@ -1684,7 +1682,7 @@ void RobotBodyFilter<T>::computeAndPublishBoundingBox(const sensor_msgs::msg::Po
       pcl::PCLPointCloud2 pclOutput;
       cropBox.filter(pclOutput);
 
-      sensor_msgs::msg::PointCloud2::Ptr boxFilteredCloud(new sensor_msgs::msg::PointCloud2());
+      sensor_msgs::msg::PointCloud2::SharedPtr boxFilteredCloud(new sensor_msgs::msg::PointCloud2());
       pcl_conversions::moveFromPCL(pclOutput, *boxFilteredCloud);
       boxFilteredCloud->header.stamp = scanTime;  // PCL strips precision of timestamp
 
@@ -1806,7 +1804,7 @@ void RobotBodyFilter<T>::computeAndPublishOrientedBoundingBox(
       pcl::PCLPointCloud2 pclOutput;
       cropBox.filter(pclOutput);
 
-      sensor_msgs::msg::PointCloud2::Ptr boxFilteredCloud(new sensor_msgs::msg::PointCloud2());
+      sensor_msgs::msg::PointCloud2::SharedPtr boxFilteredCloud(new sensor_msgs::msg::PointCloud2());
       pcl_conversions::moveFromPCL(pclOutput, *boxFilteredCloud);
       boxFilteredCloud->header.stamp = scanTime;  // PCL strips precision of timestamp
 
@@ -1933,7 +1931,7 @@ void RobotBodyFilter<T>::computeAndPublishLocalBoundingBox(
       pcl::PCLPointCloud2 pclOutput;
       cropBox.filter(pclOutput);
 
-      sensor_msgs::msg::PointCloud2::Ptr boxFilteredCloud(new sensor_msgs::msg::PointCloud2());
+      sensor_msgs::msg::PointCloud2::SharedPtr boxFilteredCloud(new sensor_msgs::msg::PointCloud2());
       pcl_conversions::moveFromPCL(pclOutput, *boxFilteredCloud);
       boxFilteredCloud->header.stamp = scanTime;  // PCL strips precision of timestamp
 
