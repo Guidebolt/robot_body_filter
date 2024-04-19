@@ -32,12 +32,12 @@ include_directories(include)
 
 set(UTILS_SRCS
   src/utils/bodies.cpp
-#   src/utils/cloud.cpp
+  # src/utils/cloud.cpp
   src/utils/shapes.cpp
 #   src/utils/string_utils.cpp
-#   src/utils/tf2_eigen.cpp
-#   src/utils/tf2_sensor_msgs.cpp
-#   src/utils/time_utils.cpp
+  src/utils/tf2_eigen.cpp
+  # src/utils/tf2_sensor_msgs.cpp
+  # src/utils/time_utils.cpp
 )
 add_library(${PROJECT_NAME}_utils ${UTILS_SRCS})
 target_link_libraries(${PROJECT_NAME}_utils ${PCL_LIBRARIES})
@@ -50,11 +50,14 @@ target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_utils)
 install(DIRECTORY include/${PROJECT_NAME}/
    DESTINATION include)
 
-install(TARGETS  ${PROJECT_NAME}_utils
+install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_utils
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
 )
+
+install(FILES rviz/debug.rviz
+  DESTINATION share/rviz)
 
 if (BUILD_TESTING) 
   find_package(ament_cmake_gtest REQUIRED)
