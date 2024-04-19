@@ -43,12 +43,20 @@ add_library(${PROJECT_NAME}_utils ${UTILS_SRCS})
 target_link_libraries(${PROJECT_NAME}_utils ${PCL_LIBRARIES})
 ament_target_dependencies(${PROJECT_NAME}_utils ${THIS_PACKAGE_DEPS})
 
+add_library(tf2_sensor_msgs_rbf src/utils/tf2_sensor_msgs.cpp)
+target_link_libraries(tf2_sensor_msgs_rbf PRIVATE ${PROJECT_NAME}_utils)
+
 add_library(RayCastingShapeMask src/RayCastingShapeMask.cpp)
 target_link_libraries(RayCastingShapeMask ${PROJECT_NAME}_utils)
+
+add_library(TFFramesWatchdog src/TFFramesWatchdog.cpp)
+target_link_libraries(TFFramesWatchdog ${PROJECT_NAME}_utils)
 
 add_library(${PROJECT_NAME} src/RobotBodyFilter.cpp)
 target_link_libraries(${PROJECT_NAME}
   ${PROJECT_NAME}_utils
+  tf2_sensor_msgs_rbf
+  TFFramesWatchdog
   RayCastingShapeMask
 )
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_DEPS})
@@ -56,7 +64,7 @@ ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_DEPS})
 install(DIRECTORY include/${PROJECT_NAME}/
    DESTINATION include)
 
-install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_utils
+install(TARGETS ${PROJECT_NAME} TFFramesWatchdog RayCastingShapeMask ${PROJECT_NAME}_utils
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
