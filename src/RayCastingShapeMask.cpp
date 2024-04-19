@@ -12,7 +12,7 @@
 
 #include <geometric_shapes/body_operations.h>
 
-#include <ros/console.h>
+// #include <ros/console.h>
 
 namespace robot_body_filter
 {
@@ -56,7 +56,7 @@ RayCastingShapeMask::~RayCastingShapeMask() = default;
 std::map<point_containment_filter::ShapeHandle, bodies::BoundingSphere>
 RayCastingShapeMask::getBoundingSpheres() const
 {
-  boost::mutex::scoped_lock _(this->shapes_lock_);
+  std::lock_guard _(this->shapes_lock_);
   std::map<point_containment_filter::ShapeHandle, bodies::BoundingSphere> map;
 
   size_t bodyIndex = 0, sphereIndex = 0;
@@ -77,7 +77,7 @@ RayCastingShapeMask::getBoundingSpheres() const
 std::map<point_containment_filter::ShapeHandle, bodies::BoundingSphere>
 RayCastingShapeMask::getBoundingSpheresForContainsTest() const
 {
-  boost::mutex::scoped_lock _(this->shapes_lock_);
+  std::lock_guard _(this->shapes_lock_);
   std::map<point_containment_filter::ShapeHandle, bodies::BoundingSphere> map;
 
   size_t bodyIndex = 0, sphereIndex = 0;
@@ -97,7 +97,7 @@ RayCastingShapeMask::getBoundingSpheresForContainsTest() const
 
 bodies::BoundingSphere RayCastingShapeMask::getBoundingSphere() const
 {
-  boost::mutex::scoped_lock _(this->shapes_lock_);
+  std::lock_guard _(this->shapes_lock_);
   return this->getBoundingSphereNoLock();
 }
 
@@ -113,7 +113,7 @@ bodies::BoundingSphere RayCastingShapeMask::getBoundingSphereForContainsTestNoLo
 
 void RayCastingShapeMask::updateBodyPoses()
 {
-  boost::mutex::scoped_lock _(this->shapes_lock_);
+  std::lock_guard _(this->shapes_lock_);
   this->updateBodyPosesNoLock();
 }
 
@@ -160,22 +160,23 @@ void RayCastingShapeMask::updateBodyPosesNoLock()
     }
     else
     {
-      if (containsBody == nullptr)
-        ROS_ERROR_STREAM_DELAYED_THROTTLE_NAMED(3, "shape_mask",
-            "Missing transform for shape with handle " << containsHandle
-            << " without a body");
+      if (containsBody == nullptr){
+        // ROS_ERROR_STREAM_DELAYED_THROTTLE_NAMED(3, "shape_mask",
+        //     "Missing transform for shape with handle " << containsHandle
+        //     << " without a body");
+    }
       else {
         std::string name;
         if (this->data->shapeNames.find(containsHandle) != this->data->shapeNames.end())
           name = this->data->shapeNames.at(containsHandle);
 
-        if (name.empty())
-          ROS_ERROR_STREAM_DELAYED_THROTTLE_NAMED(3, "shape_mask",
-              "Missing transform for shape " << containsBody->getType()
-              << " with handle " << containsHandle);
-        else
-          ROS_ERROR_STREAM_DELAYED_THROTTLE_NAMED(3, "shape_mask",
-              "Missing transform for shape " << name << " (" << containsBody->getType() << ")");
+        // if (name.empty())
+        //   ROS_ERROR_STREAM_DELAYED_THROTTLE_NAMED(3, "shape_mask",
+        //       "Missing transform for shape " << containsBody->getType()
+        //       << " with handle " << containsHandle);
+        // else
+        //   ROS_ERROR_STREAM_DELAYED_THROTTLE_NAMED(3, "shape_mask",
+        //       "Missing transform for shape " << name << " (" << containsBody->getType() << ")");
       }
     }
   }
@@ -224,7 +225,7 @@ void RayCastingShapeMask::maskContainmentAndShadows(
     const Cloud& data, std::vector<RayCastingShapeMask::MaskValue>& mask,
     const Eigen::Vector3d& sensorPos)
 {
-  boost::mutex::scoped_lock _(this->shapes_lock_);
+  std::lock_guard _(this->shapes_lock_);
 
   const auto np = num_points(data);
   mask.resize(np);
@@ -258,7 +259,7 @@ void RayCastingShapeMask::maskContainmentAndShadows(const Eigen::Vector3f& data,
     return;
   }
 
-  boost::mutex::scoped_lock _(this->shapes_lock_);
+  std::lock_guard _(this->shapes_lock_);
 
   if (updateBodyPoses)
     this->updateBodyPosesNoLock();
@@ -440,7 +441,7 @@ void RayCastingShapeMask::setTransformCallback(
 
 void RayCastingShapeMask::updateInternalShapeLists()
 {
-  boost::mutex::scoped_lock _(this->shapes_lock_);
+  std::lock_guard _(this->shapes_lock_);
 
   this->data->bodiesForContainsTest.clear();
   this->data->bodiesForShadowTest.clear();
@@ -468,7 +469,7 @@ void RayCastingShapeMask::updateInternalShapeLists()
 std::map<point_containment_filter::ShapeHandle, const bodies::Body*>
 RayCastingShapeMask::getBodies() const
 {
-  boost::mutex::scoped_lock _(this->shapes_lock_);
+  std::lock_guard _(this->shapes_lock_);
   std::map<point_containment_filter::ShapeHandle, const bodies::Body*> result;
 
   for (const auto& seeShape: this->bodies_)
@@ -480,7 +481,7 @@ RayCastingShapeMask::getBodies() const
 std::map<point_containment_filter::ShapeHandle, const bodies::Body*>
 RayCastingShapeMask::getBodiesForContainsTest() const
 {
-  boost::mutex::scoped_lock _(this->shapes_lock_);
+  std::lock_guard _(this->shapes_lock_);
   std::map<point_containment_filter::ShapeHandle, const bodies::Body*> result;
 
   for (const auto& seeShape: this->data->bodiesForContainsTest)
@@ -492,7 +493,7 @@ RayCastingShapeMask::getBodiesForContainsTest() const
 std::map<point_containment_filter::ShapeHandle, const bodies::Body*>
 RayCastingShapeMask::getBodiesForShadowTest() const
 {
-  boost::mutex::scoped_lock _(this->shapes_lock_);
+  std::lock_guard _(this->shapes_lock_);
   std::map<point_containment_filter::ShapeHandle, const bodies::Body*> result;
 
   for (const auto& seeShape: this->data->bodiesForShadowTest)
@@ -504,7 +505,7 @@ RayCastingShapeMask::getBodiesForShadowTest() const
 std::map<point_containment_filter::ShapeHandle, const bodies::Body*>
 RayCastingShapeMask::getBodiesForBoundingSphere() const
 {
-  boost::mutex::scoped_lock _(this->shapes_lock_);
+  std::lock_guard _(this->shapes_lock_);
   std::map<point_containment_filter::ShapeHandle, const bodies::Body*> result;
 
   for (const auto& seeShape: this->data->bodiesForBsphere)
@@ -516,7 +517,7 @@ RayCastingShapeMask::getBodiesForBoundingSphere() const
 std::map<point_containment_filter::ShapeHandle, const bodies::Body*>
 RayCastingShapeMask::getBodiesForBoundingBox() const
 {
-  boost::mutex::scoped_lock _(this->shapes_lock_);
+  std::lock_guard _(this->shapes_lock_);
   std::map<point_containment_filter::ShapeHandle, const bodies::Body*> result;
 
   for (const auto& seeShape: this->data->bodiesForBbox)

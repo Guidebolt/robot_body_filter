@@ -1720,13 +1720,8 @@ void RobotBodyFilter<T>::computeAndPublishOrientedBoundingBox(
       if (this->shapesIgnoredInBoundingBox.find(shapeHandle) != this->shapesIgnoredInBoundingBox.end())
         continue;
 
-      //TODO: SOLVE THIS  
       bodies::OrientedBoundingBox box;
-      // body->computeBoundingBox(box);
-      // This is probabbly wrong, originally computeBoundingBox took in
-      // the OrientedBoundingBox directly but I can't get that to work
-      auto aaba = box.toAABB();
-      body->computeBoundingBox(aaba);
+      body->computeBoundingBox(box);
 
       boxes.push_back(box);
 
