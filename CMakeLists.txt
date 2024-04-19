@@ -43,9 +43,15 @@ add_library(${PROJECT_NAME}_utils ${UTILS_SRCS})
 target_link_libraries(${PROJECT_NAME}_utils ${PCL_LIBRARIES})
 ament_target_dependencies(${PROJECT_NAME}_utils ${THIS_PACKAGE_DEPS})
 
+add_library(RayCastingShapeMask src/RayCastingShapeMask.cpp)
+target_link_libraries(RayCastingShapeMask ${PROJECT_NAME}_utils)
+
 add_library(${PROJECT_NAME} src/RobotBodyFilter.cpp)
-target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_utils)
-# ament_target_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_utils ${THIS_PACKAGE_DEPS})
+target_link_libraries(${PROJECT_NAME}
+  ${PROJECT_NAME}_utils
+  RayCastingShapeMask
+)
+ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_DEPS})
 
 install(DIRECTORY include/${PROJECT_NAME}/
    DESTINATION include)
