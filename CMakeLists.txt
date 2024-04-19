@@ -26,18 +26,14 @@ find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 
 find_package(rosidl_default_generators REQUIRED)
-rosidl_generate_interfaces(${PROJECT_NAME} "msg/OrientedBoundingBox.msg" "msg/OrientedBoundingBoxStamped.msg" DEPENDENCIES ${MESSAGE_DEPS})
+rosidl_generate_interfaces(${PROJECT_NAME}_msgs "msg/OrientedBoundingBox.msg" "msg/OrientedBoundingBoxStamped.msg" DEPENDENCIES ${MESSAGE_DEPS} LIBRARY_NAME ${PROJECT_NAME})
 
-include_directories(
-        include
-        include/utils
-        ${Dependency}_INCLUDE_DIRS
-)
+include_directories(include)
 
 set(UTILS_SRCS
   src/utils/bodies.cpp
 #   src/utils/cloud.cpp
-#   src/utils/shapes.cpp
+  src/utils/shapes.cpp
 #   src/utils/string_utils.cpp
 #   src/utils/tf2_eigen.cpp
 #   src/utils/tf2_sensor_msgs.cpp
@@ -45,37 +41,34 @@ set(UTILS_SRCS
 )
 add_library(${PROJECT_NAME}_utils ${UTILS_SRCS})
 target_link_libraries(${PROJECT_NAME}_utils ${PCL_LIBRARIES})
-ament_target_dependencies(${PROJECT_NAME}_utils
-${THIS_PACKAGE_DEPS}
-)
+ament_target_dependencies(${PROJECT_NAME}_utils ${THIS_PACKAGE_DEPS})
 
-add_library(lib${PROJECT_NAME} src/RobotBodyFilter.cpp)
-target_link_libraries(lib${PROJECT_NAME}
-  ${PROJECT_NAME}_utils
-)
-ament_target_dependencies(lib${PROJECT_NAME}
-  ${THIS_PACKAGE_DEPS}
-)
+add_library(${PROJECT_NAME} src/RobotBodyFilter.cpp)
+target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_utils)
+# ament_target_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_utils ${THIS_PACKAGE_DEPS})
 
-target_include_directories(lib${PROJECT_NAME}
-  PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-  ${THIS_PACKAGE_INCLUDE_DEPENDS}
+install(DIRECTORY include/${PROJECT_NAME}/
+   DESTINATION include)
+
+install(TARGETS  ${PROJECT_NAME}_utils
+  RUNTIME DESTINATION bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
 )
 
 if (BUILD_TESTING) 
   find_package(ament_cmake_gtest REQUIRED)
 
-  # ament_add_gtest(test_set_utils test/test_set_utils.cpp)
-  # ament_target_dependencies(test_set_utils ${THIS_PACKAGE_DEPS})
-  # target_link_libraries(test_set_utils lib${PROJECT_NAME})
+  ament_add_gtest(test_set_utils test/test_set_utils.cpp)
+  target_link_libraries(test_set_utils ${PROJECT_NAME}_utils)
+  ament_target_dependencies(test_set_utils ${THIS_PACKAGE_DEPS})
 
-#   ament_add_gtest(test_shapes_rbf test/test_shapes.cpp)
-#   target_link_libraries(test_shapes_rbf ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
+  ament_add_gtest(test_shapes_rbf test/test_shapes.cpp)
+  target_link_libraries(test_shapes_rbf ${PROJECT_NAME}_utils)
+  ament_target_dependencies(test_shapes_rbf ${THIS_PACKAGE_DEPS})
 
-#   ament_add_gtest(test_urdf_eigen test/test_urdf_eigen.cpp)
-#   target_link_libraries(test_urdf_eigen ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
+  # ament_add_gtest(test_urdf_eigen test/test_urdf_eigen.cpp)
+  # target_link_libraries(test_urdf_eigen ${PROJECT_NAME}_utils)
 
 #   ament_add_gtest(test_time_utils test/test_time_utils.cpp)
 #   target_link_libraries(test_time_utils ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
@@ -86,9 +79,9 @@ if (BUILD_TESTING)
 #   ament_add_gtest(test_string_utils test/test_string_utils.cpp)
 #   target_link_libraries(test_string_utils ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
 
-  ament_add_gtest(test_bodies test/test_bodies.cpp)
-  ament_target_dependencies(test_bodies ${THIS_PACKAGE_DEPS})
-  target_link_libraries(test_bodies lib${PROJECT_NAME} ${PROJECT_NAME}_utils)
+  # ament_add_gtest(test_bodies test/test_bodies.cpp)
+  # ament_target_dependencies(test_bodies ${THIS_PACKAGE_DEPS})
+  # target_link_libraries(test_bodies ${PROJECT_NAME} ${PROJECT_NAME}_utils)
 
 #   ament_add_gtest(test_cloud test/test_cloud.cpp)
 #   target_link_libraries(test_cloud ${PROJECT_NAME}_utils ${catkin_LIBRARIES})
@@ -117,6 +110,9 @@ if (BUILD_TESTING)
 #   ament_add_gtest(test_robot_body_filter test/test_robot_body_filter.test test/test_robot_body_filter.cpp)
 #   target_link_libraries(test_robot_body_filter ${PROJECT_NAME} ${catkin_LIBRARIES})
 #   target_compile_options(test_robot_body_filter PRIVATE -fno-var-tracking-assignments)  # speed up build
+
+  install(FILES test/box.dae test/triangle.dae
+    DESTINATION share/robot_body_filter/test)
 endif()
 
 ament_export_dependencies(${THIS_PACKAGE_DEPS})
