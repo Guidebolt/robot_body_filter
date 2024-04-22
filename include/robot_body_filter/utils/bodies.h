@@ -7,7 +7,6 @@
 #if __has_include(<geometric_shapes/obb.h>)
 #include <geometric_shapes/obb.h>
 #else
-#include "obb.hpp"
 // #error <geometric_shapes/obb.h> not found. Please, update geometric_shapes
 // library to version 0.6.5+ or 0.7.4+
 #endif
