@@ -11,7 +11,7 @@ else()
   add_compile_options(-DROBOT_BODY_FILTER_USE_CXX_OPTIONAL=0)
 endif()
 
-set(THIS_PACKAGE_DEPS filters geometric_shapes laser_geometry moveit_core moveit_ros_perception rclcpp sensor_msgs std_srvs pcl_conversions tf2 tf2_ros urdf visualization_msgs GLUT)
+set(THIS_PACKAGE_DEPS filters geometric_shapes laser_geometry moveit_core moveit_ros_perception rclcpp sensor_msgs std_srvs pcl_conversions tf2 tf2_ros tf2_eigen urdf visualization_msgs GLUT )
 set(MESSAGE_DEPS geometry_msgs std_msgs)
 
 find_package(ament_cmake REQUIRED)
@@ -28,7 +28,7 @@ find_package(PkgConfig REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}_msgs "msg/OrientedBoundingBox.msg" "msg/OrientedBoundingBoxStamped.msg" DEPENDENCIES ${MESSAGE_DEPS} LIBRARY_NAME ${PROJECT_NAME})
 
-include_directories(include)
+include_directories(include include/${PROJECT_NAME} include/${PROJECT_NAME}/utils)
 
 set(UTILS_SRCS
   src/utils/bodies.cpp
@@ -42,9 +42,11 @@ set(UTILS_SRCS
 add_library(${PROJECT_NAME}_utils ${UTILS_SRCS})
 target_link_libraries(${PROJECT_NAME}_utils ${PCL_LIBRARIES})
 ament_target_dependencies(${PROJECT_NAME}_utils ${THIS_PACKAGE_DEPS})
+ament_export_libraries(${PROJECT_NAME}_utils)
 
 add_library(tf2_sensor_msgs_rbf src/utils/tf2_sensor_msgs.cpp)
-target_link_libraries(tf2_sensor_msgs_rbf PRIVATE ${PROJECT_NAME}_utils)
+target_link_libraries(tf2_sensor_msgs_rbf ${PROJECT_NAME}_utils)
+ament_export_libraries(tf2_sensor_msgs_rbf)
 
 add_library(RayCastingShapeMask src/RayCastingShapeMask.cpp)
 target_link_libraries(RayCastingShapeMask ${PROJECT_NAME}_utils)
@@ -53,6 +55,9 @@ add_library(TFFramesWatchdog src/TFFramesWatchdog.cpp)
 target_link_libraries(TFFramesWatchdog ${PROJECT_NAME}_utils)
 
 add_library(${PROJECT_NAME} src/RobotBodyFilter.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+$<INSTALL_INTERFACE:include>)
 target_link_libraries(${PROJECT_NAME}
   ${PROJECT_NAME}_utils
   tf2_sensor_msgs_rbf
@@ -64,7 +69,7 @@ ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_DEPS})
 install(DIRECTORY include/${PROJECT_NAME}/
    DESTINATION include)
 
-install(TARGETS ${PROJECT_NAME} TFFramesWatchdog RayCastingShapeMask ${PROJECT_NAME}_utils
+install(TARGETS ${PROJECT_NAME} TFFramesWatchdog RayCastingShapeMask tf2_sensor_msgs_rbf ${PROJECT_NAME}_utils
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -133,4 +138,6 @@ if (BUILD_TESTING)
 endif()
 
 ament_export_dependencies(${THIS_PACKAGE_DEPS})
+ament_export_include_directories(include)
+ament_export_libraries(${PROJECT_NAME} TFFramesWatchdog RayCastingShapeMask tf2_sensor_msgs_rbf ${PROJECT_NAME}_utils)
 ament_package()
