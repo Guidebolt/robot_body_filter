@@ -3,7 +3,7 @@
 #include <robot_body_filter/utils/cloud.h>
 #include <robot_body_filter/utils/string_utils.hpp>
 
-#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 #include <Eigen/Geometry>  // needs to be implementation-private as we want -march=native optimizations
 
@@ -70,6 +70,9 @@ void transformChannel(const sensor_msgs::msg::PointCloud2& cloudIn, sensor_msgs:
         *y_out = point.y();
         *z_out = point.z();
       }
+      break;
+    case CloudChannelType::SCALAR:
+    //TODO: ADD WARNING FOR NOT SUPPORTED
       break;
   }
 }
