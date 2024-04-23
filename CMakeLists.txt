@@ -32,12 +32,12 @@ include_directories(include include/${PROJECT_NAME} include/${PROJECT_NAME}/util
 
 set(UTILS_SRCS
   src/utils/bodies.cpp
-  # src/utils/cloud.cpp
+  src/utils/cloud.cpp
   src/utils/shapes.cpp
-#   src/utils/string_utils.cpp
+  src/utils/string_utils.cpp
   src/utils/tf2_eigen.cpp
-  # src/utils/tf2_sensor_msgs.cpp
-  # src/utils/time_utils.cpp
+  src/utils/tf2_sensor_msgs.cpp
+  src/utils/time_utils.cpp
 )
 add_library(${PROJECT_NAME}_utils ${UTILS_SRCS})
 target_link_libraries(${PROJECT_NAME}_utils ${PCL_LIBRARIES})
@@ -66,10 +66,11 @@ target_link_libraries(${PROJECT_NAME}
 )
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_DEPS})
 
-install(DIRECTORY include/${PROJECT_NAME}/
+install(DIRECTORY include/
    DESTINATION include)
 
 install(TARGETS ${PROJECT_NAME} TFFramesWatchdog RayCastingShapeMask tf2_sensor_msgs_rbf ${PROJECT_NAME}_utils
+  EXPORT export_${PROJECT_NAME}
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -137,7 +138,11 @@ if (BUILD_TESTING)
     DESTINATION share/robot_body_filter/test)
 endif()
 
+ament_export_include_directories(include include/${PROJECT_NAME} include/${PROJECT_NAME}/utils)
 ament_export_dependencies(${THIS_PACKAGE_DEPS})
 ament_export_include_directories(include)
 ament_export_libraries(${PROJECT_NAME} TFFramesWatchdog RayCastingShapeMask tf2_sensor_msgs_rbf ${PROJECT_NAME}_utils)
+ament_export_targets(
+  export_${PROJECT_NAME}
+)
 ament_package()
