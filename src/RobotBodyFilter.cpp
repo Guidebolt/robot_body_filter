@@ -37,16 +37,24 @@
 namespace robot_body_filter {
 
 template <typename T>
-RobotBodyFilter<T>::RobotBodyFilter()
-    : privateNodeHandle("~"),
-      nodeHandle(std::make_shared<rclcpp::Node>("robot_body_filter")),
+RobotBodyFilter<T>::RobotBodyFilter(std::shared_ptr<rclcpp::Node> inputNode)
+    : privateNodeHandle("robot_body_filter_private"),
+      nodeHandle(inputNode),
       modelPoseUpdateInterval(0, 0),
       reachableTransformTimeout(0, 0),
       unreachableTransformTimeout(0, 0),
       tfBufferLength(0, 0) {
-  this->modelMutex.reset(new std::mutex());
+  this->modelMutex = std::make_shared<std::mutex>();
+}
 
-  // Declare ROS2 Parameters in node constructor
+void RobotBodyFilterPointCloud2::DeclareParameters(){
+  this->nodeHandle->declare_parameter("sensor/point_by_point", false);
+  RobotBodyFilter::DeclareParameters();
+};
+
+template <typename T>
+void RobotBodyFilter<T>::DeclareParameters(){
+// Declare ROS2 Parameters in node constructor
   auto param_desc = rcl_interfaces::msg::ParameterDescriptor{};
 
   param_desc.description = "frames/fixed";
@@ -54,13 +62,13 @@ RobotBodyFilter<T>::RobotBodyFilter()
   param_desc.description = "frames/sensor";
   this->nodeHandle->declare_parameter("sensorFrame", "", param_desc);
   param_desc.description = "frames/filtering";
-  this->nodeHandle->declare_parameter("filteringFrame", this->fixedFrame, param_desc);
+  this->nodeHandle->declare_parameter("filteringFrame", "base_link", param_desc);
   param_desc.description = "m";
   param_desc.type = rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE;
   this->nodeHandle->declare_parameter("minDistance", 0.0, param_desc);
   this->nodeHandle->declare_parameter("maxDistance", 0.0, param_desc);
   param_desc.description = "body_model/robot_description_param name";
-  this->nodeHandle->declare_parameter("body_model/robot_description_param", "", param_desc);
+  this->nodeHandle->declare_parameter("body_model/robot_description_param", "robot_description", param_desc);
   this->nodeHandle->declare_parameter("filter/keep_clouds_organized", true);
   param_desc.description = "s";
   this->nodeHandle->declare_parameter("filter/model_pose_update_interval", 0.0, param_desc);
@@ -118,29 +126,39 @@ RobotBodyFilter<T>::RobotBodyFilter()
 
   this->nodeHandle->declare_parameters("body_model/inflation/per_link/scale", std::map<std::string, double>());
 
-  // Note: some of these are init to empty strings, originally they are vectors
-  // of strings
-  this->nodeHandle->declare_parameter("ignored_links/bounding_sphere", "");
-  this->nodeHandle->declare_parameter("ignored_links/bounding_box", "");
-  this->nodeHandle->declare_parameter("ignored_links/contains_test", "");
-  this->nodeHandle->declare_parameter("ignored_links/shadow_test", "laser");
-  this->nodeHandle->declare_parameter("ignored_links/everywhere", "");
-  this->nodeHandle->declare_parameter("only_links", "");
+  this->nodeHandle->declare_parameter("ignored_links/bounding_sphere", std::vector<std::string>{""});
+  this->nodeHandle->declare_parameter("ignored_links/bounding_box", std::vector<std::string>{""});
+  this->nodeHandle->declare_parameter("ignored_links/contains_test", std::vector<std::string>{""});
+  this->nodeHandle->declare_parameter("ignored_links/shadow_test", std::vector<std::string>{"laser"});
+  this->nodeHandle->declare_parameter("ignored_links/everywhere", std::vector<std::string>{""});
+  this->nodeHandle->declare_parameter("only_links", std::vector<std::string>{""});
   this->nodeHandle->declare_parameter("body_model/dynamic_robot_description/field_name", "robot_model");
 
-  this->nodeHandle->declare_parameter("frames/output", this->filteringFrame);
+  this->nodeHandle->declare_parameter("frames/output", "base_link");
   this->nodeHandle->declare_parameter("cloud/point_channels", std::vector<std::string>{"vp_"});
   this->nodeHandle->declare_parameter("cloud/direction_channels", std::vector<std::string>{"normal_"});
+  this->nodeHandle->declare_parameter("transforms/buffer_length", 60.0);
+
+  //TESTING
+  this->nodeHandle->declare_parameter("robot_description", std::string{""});
 }
 
 template <typename T>
 bool RobotBodyFilter<T>::configure() {
-  // this->tfBufferLength = this->getParamVerbose("transforms/buffer_length",
-  // rclcpp::Duration(60.0), "s");
+  double tempBufferLength = 0.0;
+  this->nodeHandle->get_parameter("transforms/buffer_length", tempBufferLength);
+  this->tfBufferLength = rclcpp::Duration::from_seconds(tempBufferLength);
   if (this->tfBuffer == nullptr) {
     tf2::Duration tf2_duration = tf2_ros::fromRclcpp(this->tfBufferLength);
-    this->tfBuffer = std::make_shared<tf2_ros::Buffer>(nodeHandle->get_clock(), tf2_duration);
-    this->tfListener = std::make_unique<tf2_ros::TransformListener>(*this->tfBuffer);
+    RCLCPP_INFO(this->nodeHandle->get_logger(), "Creating TF buffer with length %f", this->tfBufferLength.seconds());
+    this->tfBuffer = std::make_shared<tf2_ros::Buffer>(this->nodeHandle->get_clock());
+    this->tfListener = std::make_shared<tf2_ros::TransformListener>(*this->tfBuffer);
+    if(this->tfBuffer->canTransform("base_link", "laser", tf2::TimePointZero)){
+      RCLCPP_INFO(this->nodeHandle->get_logger(), "Transform is available INSIDE");
+    }
+    else{
+      RCLCPP_INFO(this->nodeHandle->get_logger(), "Transform is not available INSIDE");
+    }
   } else {
     // clear the TF buffer (useful if calling configure() after receiving old TF
     // data)
@@ -148,10 +166,13 @@ bool RobotBodyFilter<T>::configure() {
   }
 
   this->nodeHandle->get_parameter("fixedFrame", this->fixedFrame);
+  RCLCPP_DEBUG(this->nodeHandle->get_logger(), "Fixed frame: %s", this->fixedFrame.c_str());
   stripLeadingSlash(this->fixedFrame, true);
   this->nodeHandle->get_parameter("sensorFrame", this->sensorFrame);
+  RCLCPP_DEBUG(this->nodeHandle->get_logger(), "sensor frame: %s", this->sensorFrame.c_str());
   stripLeadingSlash(this->sensorFrame, true);
   this->nodeHandle->get_parameter("filteringFrame", this->filteringFrame);
+  RCLCPP_DEBUG(this->nodeHandle->get_logger(), "filtering frame: %s", this->filteringFrame.c_str());
   stripLeadingSlash(this->sensorFrame, true);
   this->nodeHandle->get_parameter("minDistance", this->minDistance);
   this->nodeHandle->get_parameter("maxDistance", this->maxDistance);
@@ -382,7 +403,7 @@ bool RobotBodyFilter<T>::configure() {
   this->nodeHandle->get_parameter("sensor/point_by_point", this->pointByPointScan);
 
 
-
+  //TODO: Update to true ROS2 parameter callback on robot_description
   // subscribe for robot_description param changes
   this->robotDescriptionUpdatesListener = this->nodeHandle->template create_subscription<std_msgs::msg::String>(
       "dynamic_robot_model_server/parameter_updates", 10,
@@ -393,17 +414,13 @@ bool RobotBodyFilter<T>::configure() {
 
 
 
-  // if (this->computeBoundingSphere) {
-  //   this->boundingSpherePublisher =
-  //       this->nodeHandle->template advertise<SphereStamped>(
-  //           "robot_bounding_sphere", 100);
-  // }
+  if (this->computeBoundingSphere) {
+    this->boundingSpherePublisher = nodeHandle->create_publisher<shape_msgs::msg::SolidPrimitive>("robot_bounding_sphere", rclcpp::QoS(100));
+  }
 
-  // if (this->computeBoundingBox) {
-  //   this->boundingBoxPublisher = this->nodeHandle->template
-  //   advertise<geometry_msgs::msg::PolygonStamped>("robot_bounding_box",
-  //   100);
-  // }
+  if (this->computeBoundingBox) {
+    this->boundingBoxPublisher = nodeHandle->create_publisher<geometry_msgs::msg::PolygonStamped>("robot_bounding_box", rclcpp::QoS(100));
+  }
 
   // if (this->computeOrientedBoundingBox) {
   //   this->orientedBoundingBoxPublisher = this->nodeHandle->template
@@ -568,6 +585,8 @@ bool RobotBodyFilter<T>::configure() {
       initialMonitoredFrames.insert(this->sensorFrame);
     }
     auto loop_rate = std::make_shared<rclcpp::Rate>(rclcpp::Duration::from_seconds(1.0).nanoseconds());
+    RCLCPP_DEBUG(this->nodeHandle->get_logger(), "Creating TF frames watchdog");
+    RCLCPP_DEBUG(this->nodeHandle->get_logger(), "Filtering data in frame %s", this->filteringFrame.c_str()); 
     this->tfFramesWatchdog =
         std::make_shared<TFFramesWatchdog>(this->nodeHandle, this->filteringFrame, initialMonitoredFrames,
                                            this->tfBuffer, this->unreachableTransformTimeout, loop_rate);
@@ -575,9 +594,9 @@ bool RobotBodyFilter<T>::configure() {
   }
 
   {  // initialize the robot body to be masked out
-
+    auto sleeper = rclcpp::Rate(rclcpp::Duration::from_seconds(1.0).nanoseconds());
     std::string robotUrdf;
-    while (!this->nodeHandle->get_parameter(this->robotDescriptionParam, robotUrdf) || robotUrdf.length() == 0) {
+    while (!this->nodeHandle->get_parameter(this->robotDescriptionParam.c_str(), robotUrdf) || robotUrdf.length() == 0) {
       if (this->failWithoutRobotDescription) {
         throw std::runtime_error("RobotBodyFilter: " + this->robotDescriptionParam + " is empty or not set.");
       }
@@ -612,29 +631,54 @@ bool RobotBodyFilter<T>::configure() {
       RCLCPP_INFO(nodeHandle->get_logger(),"RobotBodyFilter: Filtering applied to all links except %s.",
       to_string(this->linksIgnoredEverywhere).c_str());
     }
-  } else {
+  } 
+  else {
     if (this->linksIgnoredEverywhere.empty()) {
       RCLCPP_INFO(nodeHandle->get_logger(),"RobotBodyFilter: Filtering applied to links %s.", to_string(this->onlyLinks).c_str());
-    } else {
-      RCLCPP_INFO(nodeHandle->get_logger(),"RobotBodyFilter: Filtering applied to links %s with these links excluded: %s.",
-      to_string(this->onlyLinks).c_str(),
-      to_string(this->linksIgnoredEverywhere).c_str());
+    } 
+    else {
+      // this->onlyLinks.insert("test");
+      auto value2 = this->onlyLinks.find("test");
+      if (value2 != this->onlyLinks.end()) {
+        RCLCPP_INFO(nodeHandle->get_logger(),"Did we insert element? : %s.", "yes");
+      }
+      RCLCPP_INFO(nodeHandle->get_logger(),"Did we insert element? : %s.", "no");
+      std::stringstream ss;
+      ss << "[";
+      size_t i = 0;
+      for (const auto& v : this->onlyLinks) {
+        if (std::is_same<std::string, T>::value)
+          ss << "\"" << to_string(v) << "\"";
+        else
+          ss << to_string(v);
+        if (i + 1 < this->onlyLinks.size()) ss << ", ";
+        ++i;
+      }
+      ss << "]";
+      RCLCPP_INFO(nodeHandle->get_logger(),"RobotBodyFilter: Filtering applied to links %s with these links excluded: %s.", "test", ss.str().c_str());
+      auto localOnlyLinks = this->onlyLinks;
+      // auto onlyLinks = to_string(localOnlyLinks).c_str();
+      // to_string(this->onlyLinks).c_str());
+      // to_string(this->linksIgnoredEverywhere).c_str());
     }
   }
 
   this->timeConfigured = this->nodeHandle->now();
 
+  //Bad idea?
+  this->configured_ = true;
+
   return true;
 }
 
 bool RobotBodyFilterLaserScan::configure() {
-  this->nodeHandle->declare_parameter("sensor/point_by_point", true);
+  // this->nodeHandle->declare_parameter("sensor/point_by_point", true);
   bool success = RobotBodyFilter::configure();
   return false;
 }
 
 bool RobotBodyFilterPointCloud2::configure() {
-  this->nodeHandle->declare_parameter("sensor/point_by_point", false);
+  RCLCPP_INFO(nodeHandle->get_logger(),"Configuring");
 
   bool success = RobotBodyFilter::configure();
   if (!success) return false;
@@ -667,20 +711,24 @@ bool RobotBodyFilter<T>::computeMask(
 
   // compute a mask of point indices for points from projectedPointCloud
   // that tells if they are inside or outside robot, or shadow points
-
+  RCLCPP_ERROR(nodeHandle->get_logger(), "testmsg");
   if (!this->pointByPointScan) {
     Eigen::Vector3d sensorPosition;
     try {
+      RCLCPP_ERROR(nodeHandle->get_logger(), "testmsg");
       const auto sensorTf = this->tfBuffer->lookupTransform(this->filteringFrame, sensorFrame, scanTime,
-                                                            remainingTime(scanTime, this->reachableTransformTimeout));
+                                                            remainingTime(*this->nodeHandle->get_clock(), scanTime, this->reachableTransformTimeout));
+      RCLCPP_ERROR(nodeHandle->get_logger(), "testmsg");
       tf2::fromMsg(sensorTf.transform.translation, sensorPosition);
     } catch (tf2::TransformException& e) {
+      RCLCPP_ERROR(nodeHandle->get_logger(), "testmsg");
       RCLCPP_ERROR(nodeHandle->get_logger(),
                    "RobotBodyFilter: Could not compute filtering mask due to this "
                    "TF exception: %s",
                    e.what());
       return false;
     }
+  RCLCPP_ERROR(nodeHandle->get_logger(), "testmsg");
 
     // update transforms cache, which is then used in body masking
     this->updateTransformCache(scanTime);
@@ -698,6 +746,7 @@ bool RobotBodyFilter<T>::computeMask(
     CloudConstIter stamps_it(projectedPointCloud, "stamps");
 
     pointMask.resize(num_points(projectedPointCloud));
+  RCLCPP_ERROR(nodeHandle->get_logger(), "testmsg");
 
     double scanDuration = 0.0;
     for (CloudConstIter stamps_end_it(projectedPointCloud, "stamps"); stamps_end_it != stamps_end_it.end();
@@ -716,6 +765,7 @@ bool RobotBodyFilter<T>::computeMask(
       // prevent division by zero
       if (updateBodyPosesEvery == 0) updateBodyPosesEvery = 1;
     }
+  RCLCPP_ERROR(nodeHandle->get_logger(), "testmsg");
 
     // prevent division by zero in ratio computation in case the pointcloud
     // isn't really taken point by point with different timestamps
@@ -733,6 +783,7 @@ bool RobotBodyFilter<T>::computeMask(
     Eigen::Vector3f point;
     Eigen::Vector3d viewPoint;
     RayCastingShapeMask::MaskValue mask;
+  RCLCPP_ERROR(nodeHandle->get_logger(), "testmsg");
 
     this->cacheLookupBetweenScansRatio = 0.0;
     for (size_t i = 0; i < num_points(projectedPointCloud);
@@ -775,6 +826,9 @@ bool RobotBodyFilter<T>::computeMask(
 
 bool RobotBodyFilterLaserScan::update(const sensor_msgs::msg::LaserScan& inputScan,
                                       sensor_msgs::msg::LaserScan& filteredScan) {
+  RCLCPP_DEBUG(nodeHandle->get_logger(), "UPDATING MEMERS");
+  
+
   const auto& headerScanTime = inputScan.header.stamp;
   const auto& scanTime = rclcpp::Time(inputScan.header.stamp);
 
@@ -855,9 +909,9 @@ bool RobotBodyFilterLaserScan::update(const sensor_msgs::msg::LaserScan& inputSc
 
       std::string err;
       if (!this->tfBuffer->canTransform(this->fixedFrame, scanFrame, scanTime,
-                                        remainingTime(scanTime, this->reachableTransformTimeout), &err) ||
+                                        remainingTime(*this->nodeHandle->get_clock(), scanTime, this->reachableTransformTimeout), &err) ||
           !this->tfBuffer->canTransform(this->fixedFrame, scanFrame, afterScanTime,
-                                        remainingTime(afterScanTime, this->reachableTransformTimeout), &err)) {
+                                        remainingTime(*this->nodeHandle->get_clock(), afterScanTime, this->reachableTransformTimeout), &err)) {
         if (err.find("future") != std::string::npos) {
           const auto delay = nodeHandle->now() - scanTime;
           auto& clk = *nodeHandle->get_clock();
@@ -909,7 +963,7 @@ bool RobotBodyFilterLaserScan::update(const sensor_msgs::msg::LaserScan& inputSc
                          tmpPointCloud.header.frame_id.c_str(), this->filteringFrame.c_str());
         std::string err;
         if (!this->tfBuffer->canTransform(this->filteringFrame, tmpPointCloud.header.frame_id, scanTime,
-                                          remainingTime(scanTime, this->reachableTransformTimeout), &err)) {
+                                          remainingTime(*this->nodeHandle->get_clock(), scanTime, this->reachableTransformTimeout), &err)) {
           auto& clk = *nodeHandle->get_clock();
           RCLCPP_ERROR_THROTTLE(nodeHandle->get_logger(), clk, 3,
                                 "RobotBodyFilter: Cannot transform "
@@ -993,10 +1047,14 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2& inp
     return false;
   }
 
+  RCLCPP_ERROR(nodeHandle->get_logger(), "Passed checks");
+
   const auto inputCloudFrame =
       this->sensorFrame.empty() ? stripLeadingSlash(inputCloud.header.frame_id, true) : this->sensorFrame;
 
   if (!this->tfFramesWatchdog->isReachable(inputCloudFrame)) {
+    RCLCPP_DEBUG(nodeHandle->get_logger(),
+                 "inputCloudFrame: %s", inputCloudFrame.c_str());
     RCLCPP_DEBUG(nodeHandle->get_logger(),
                  "RobotBodyFilter: Throwing away scan since sensor frame is "
                  "unreachable.");
@@ -1057,6 +1115,7 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2& inp
   }
 
   // Transform to filtering frame
+  RCLCPP_ERROR(nodeHandle->get_logger(), "TRANSFORM");
 
   sensor_msgs::msg::PointCloud2 transformedCloud;
   if (inputCloud.header.frame_id == this->filteringFrame) {
@@ -1066,8 +1125,8 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2& inp
                      inputCloud.header.frame_id.c_str(), this->filteringFrame.c_str());
     std::lock_guard<std::mutex> guard(*this->modelMutex);
     std::string err;
-    if (!this->tfBuffer->canTransform(this->filteringFrame, inputCloud.header.frame_id, scanTime,
-                                      remainingTime(scanTime, this->reachableTransformTimeout), &err)) {
+    if (!this->tfBuffer->canTransform("base_link", "base_link", scanTime,
+                                      remainingTime(*this->nodeHandle->get_clock(), scanTime, this->reachableTransformTimeout), &err)) {
       auto& clk = *nodeHandle->get_clock();
       RCLCPP_ERROR_THROTTLE(nodeHandle->get_logger(), clk, 3,
                             "RobotBodyFilter: Cannot transform "
@@ -1080,6 +1139,8 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2& inp
                           this->channelsToTransform);
   }
 
+  RCLCPP_ERROR(nodeHandle->get_logger(), "TRANSFORM2");
+
   // Compute the mask and use it (transform message only if sensorFrame is
   // specified)
   std::vector<RayCastingShapeMask::MaskValue> pointMask;
@@ -1091,6 +1152,7 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2& inp
   }
 
   // Filter the cloud
+  RCLCPP_ERROR(nodeHandle->get_logger(), "TRANSFORM3");
 
   sensor_msgs::msg::PointCloud2 tmpCloud;
   CREATE_FILTERED_CLOUD(transformedCloud, tmpCloud, this->keepCloudsOrganized,
@@ -1105,8 +1167,8 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2& inp
                      tmpCloud.header.frame_id.c_str(), this->outputFrame.c_str());
     std::lock_guard<std::mutex> guard(*this->modelMutex);
     std::string err;
-    if (!this->tfBuffer->canTransform(this->outputFrame, tmpCloud.header.frame_id, scanTime,
-                                      remainingTime(scanTime, this->reachableTransformTimeout), &err)) {
+    if (!this->tfBuffer->canTransform("laser", "base_link", scanTime,
+                                      remainingTime(*this->nodeHandle->get_clock(), scanTime, this->reachableTransformTimeout), &err)) {
       auto& clk = *nodeHandle->get_clock();
       RCLCPP_ERROR_THROTTLE(nodeHandle->get_logger(), clk, 3,
                             "RobotBodyFilter: Cannot transform "
@@ -1117,6 +1179,8 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2& inp
 
     transformWithChannels(tmpCloud, filteredCloud, *this->tfBuffer, this->outputFrame, this->channelsToTransform);
   }
+
+  RCLCPP_ERROR(nodeHandle->get_logger(), "TRANSFORM4");
 
   return true;
 }
@@ -1189,7 +1253,7 @@ void RobotBodyFilter<T>::updateTransformCache(const rclcpp::Time& time, const rc
 
     {
       auto linkTransformTfOptional = this->tfFramesWatchdog->lookupTransform(
-          linkFrame, time, remainingTime(time, this->reachableTransformTimeout));
+          linkFrame, time, remainingTime(*this->nodeHandle->get_clock(), time, this->reachableTransformTimeout));
 
       if (!linkTransformTfOptional)  // has no value
         continue;
@@ -1205,7 +1269,7 @@ void RobotBodyFilter<T>::updateTransformCache(const rclcpp::Time& time, const rc
 
     if (afterScanTime.seconds() != 0) {
       auto linkTransformTfOptional = this->tfFramesWatchdog->lookupTransform(
-          linkFrame, afterScanTime, remainingTime(time, this->reachableTransformTimeout));
+          linkFrame, afterScanTime, remainingTime(*this->nodeHandle->get_clock(), time, this->reachableTransformTimeout));
 
       if (!linkTransformTfOptional)  // has no value
         continue;
@@ -1234,16 +1298,12 @@ void RobotBodyFilter<T>::addRobotMaskFromUrdf(const std::string& urdfModel) {
   // parse the URDF model
   urdf::Model parsedUrdfModel;
   bool urdfParseSucceeded = parsedUrdfModel.initString(urdfModel);
-  // if (!urdfParseSucceeded) {
-  //   RCLCPP_ERROR(nodeHandle->get_logger(),"RobotBodyFilter: The URDF model
-  //   given in parameter '"
-  //                    << this->robotDescriptionParam
-  //                    << "' cannot be parsed. See "
-  //                       "urdf::Model::initString for debugging, or try
-  //                       running "
-  //                       "'gzsdf my_robot.urdf'");
-  //   return;
-  // }
+  if (!urdfParseSucceeded) {
+    RCLCPP_ERROR(nodeHandle->get_logger(),
+                 "RobotBodyFilter: The URDF model given in parameter %s cannot be parsed. See urdf::Model::initString for debugging, or try running gzsdf my_robot.urdf",
+                 this->robotDescriptionParam.c_str());
+    return;
+  }
 
   {
     std::lock_guard<std::mutex> guard(*this->modelMutex);
@@ -1822,18 +1882,18 @@ void RobotBodyFilter<T>::computeAndPublishLocalBoundingBox(
 
   const auto& scanTime = projectedPointCloud.header.stamp;
   std::string err;
-  try {
-    if (!this->tfBuffer->canTransform(this->localBoundingBoxFrame, this->filteringFrame, scanTime,
-                                      remainingTime(scanTime, this->reachableTransformTimeout), &err)) {
-      RCLCPP_ERROR(nodeHandle->get_logger(), "Cannot get transform %s->%s. Error is %s.", this->filteringFrame.c_str(),
-                   this->localBoundingBoxFrame.c_str(), err.c_str());
-      return;
-    }
-  } catch (tf2::TransformException& e) {
-    RCLCPP_ERROR(nodeHandle->get_logger(), "Cannot get transform %s->%s. Error is %s.", this->filteringFrame.c_str(),
-                 this->localBoundingBoxFrame.c_str(), e.what());
-    return;
-  }
+  // try {
+  //   if (!this->tfBuffer->canTransform(this->localBoundingBoxFrame, this->filteringFrame, scanTime,
+  //                                     remainingTime(scanTime, this->reachableTransformTimeout), &err)) {
+  //     RCLCPP_ERROR(nodeHandle->get_logger(), "Cannot get transform %s->%s. Error is %s.", this->filteringFrame.c_str(),
+  //                  this->localBoundingBoxFrame.c_str(), err.c_str());
+  //     return;
+  //   }
+  // } catch (tf2::TransformException& e) {
+  //   RCLCPP_ERROR(nodeHandle->get_logger(), "Cannot get transform %s->%s. Error is %s.", this->filteringFrame.c_str(),
+  //                this->localBoundingBoxFrame.c_str(), e.what());
+  //   return;
+  // }
 
   const auto localTfMsg = this->tfBuffer->lookupTransform(this->localBoundingBoxFrame, this->filteringFrame, scanTime);
   const Eigen::Isometry3d localTf = tf2::transformToEigen(localTfMsg.transform);

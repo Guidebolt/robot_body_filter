@@ -67,6 +67,7 @@ void TFFramesWatchdog::searchForReachableFrames()
       break;
     }
     std::string err;
+    RCLCPP_DEBUG(this->nodeHandle->get_logger(), "robot frame: %s, checking against: %s" , this->robotFrame.c_str(), frame.c_str());
     if (this->tfBuffer->canTransform(this->robotFrame, frame, time, this->unreachableTfLookupTimeout, &err)) {
       this->markReachable(frame);
       RCLCPP_DEBUG(this->nodeHandle->get_logger(),"TFFramesWatchdog (%s): Frame %s became reachable at %i.%i",
@@ -136,7 +137,7 @@ optional<geometry_msgs::msg::TransformStamped> TFFramesWatchdog::lookupTransform
   }
 
   if (!this->tfBuffer->canTransform(this->robotFrame, frame, time,
-      remainingTime(time, timeout), errstr)) {
+      remainingTime(*this->nodeHandle->get_clock(), time, timeout), errstr)) {
     auto &clk = *nodeHandle->get_clock();
     RCLCPP_WARN_THROTTLE(this->nodeHandle->get_logger(), clk, 3,
                          "TFFramesWatchdog (%s): Frame %s became unreachable. Cause: %s", this->robotFrame.c_str(),
@@ -149,7 +150,7 @@ optional<geometry_msgs::msg::TransformStamped> TFFramesWatchdog::lookupTransform
   try
   {
     return this->tfBuffer->lookupTransform(
-        this->robotFrame, frame, time, remainingTime(time, timeout));
+        this->robotFrame, frame, time, remainingTime(*this->nodeHandle->get_clock(), time, timeout));
   } catch (tf2::LookupException&) {
     auto &clk = *nodeHandle->get_clock();
     RCLCPP_WARN_THROTTLE(this->nodeHandle->get_logger(), clk, 3,
