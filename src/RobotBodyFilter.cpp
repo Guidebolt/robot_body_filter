@@ -812,12 +812,12 @@ bool RobotBodyFilter<T>::computeMask(
   RCLCPP_DEBUG(nodeHandle->get_logger(), "RobotBodyFilter: Mask computed in %.5f secs.",
                double(clock() - stopwatchOverall) / CLOCKS_PER_SEC);
 
-  this->publishDebugPointClouds(projectedPointCloud, pointMask);
-  this->publishDebugMarkers(scanTime);
-  this->computeAndPublishBoundingSphere(projectedPointCloud);
-  this->computeAndPublishBoundingBox(projectedPointCloud);
-  this->computeAndPublishOrientedBoundingBox(projectedPointCloud);
-  this->computeAndPublishLocalBoundingBox(projectedPointCloud);
+  // this->publishDebugPointClouds(projectedPointCloud, pointMask);
+  // this->publishDebugMarkers(scanTime);
+  // this->computeAndPublishBoundingSphere(projectedPointCloud);
+  // this->computeAndPublishBoundingBox(projectedPointCloud);
+  // this->computeAndPublishOrientedBoundingBox(projectedPointCloud);
+  // this->computeAndPublishLocalBoundingBox(projectedPointCloud);
 
   RCLCPP_DEBUG(nodeHandle->get_logger(), "RobotBodyFilter: Filtering run time is %.5f secs.",
                double(clock() - stopwatchOverall) / CLOCKS_PER_SEC);
