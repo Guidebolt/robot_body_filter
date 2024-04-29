@@ -62,7 +62,7 @@ void RobotBodyFilter<T>::DeclareParameters(){
   param_desc.description = "frames/sensor";
   this->nodeHandle->declare_parameter("sensorFrame", "", param_desc);
   param_desc.description = "frames/filtering";
-  this->nodeHandle->declare_parameter("filteringFrame", "base_link", param_desc);
+  this->nodeHandle->declare_parameter("filteringFrame", rclcpp::ParameterType::PARAMETER_STRING, param_desc);
   param_desc.description = "m";
   param_desc.type = rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE;
   this->nodeHandle->declare_parameter("minDistance", 0.0, param_desc);
@@ -76,7 +76,7 @@ void RobotBodyFilter<T>::DeclareParameters(){
   this->nodeHandle->declare_parameter("filter/do_contains_test", true);
   this->nodeHandle->declare_parameter("filter/do_shadow_test", true);
   param_desc.description = "m";
-  this->nodeHandle->declare_parameter("filter/max_shadow_distance", this->maxDistance, param_desc);
+  this->nodeHandle->declare_parameter("filter/max_shadow_distance", rclcpp::ParameterType::PARAMETER_DOUBLE, param_desc);
   param_desc.description = "s";
   this->nodeHandle->declare_parameter("transforms/timeout/reachable", 0.1, param_desc);
   this->nodeHandle->declare_parameter("transforms/timeout/unreachable", 0.2, param_desc);
@@ -97,7 +97,7 @@ void RobotBodyFilter<T>::DeclareParameters(){
   this->nodeHandle->declare_parameter("bounding_box/marker", false);
   this->nodeHandle->declare_parameter("oriented_bounding_box/marker", false);
   this->nodeHandle->declare_parameter("local_bounding_box/marker", false);
-  this->nodeHandle->declare_parameter("local_bounding_box/frame_id", this->fixedFrame);
+  this->nodeHandle->declare_parameter("local_bounding_box/frame_id", rclcpp::ParameterType::PARAMETER_STRING);
   this->nodeHandle->declare_parameter("debug/pcl/inside", false);
   this->nodeHandle->declare_parameter("debug/pcl/clip", false);
   this->nodeHandle->declare_parameter("debug/pcl/shadow", false);
@@ -171,7 +171,7 @@ bool RobotBodyFilter<T>::configure() {
   this->nodeHandle->get_parameter("sensorFrame", this->sensorFrame);
   RCLCPP_DEBUG(this->nodeHandle->get_logger(), "sensor frame: %s", this->sensorFrame.c_str());
   stripLeadingSlash(this->sensorFrame, true);
-  this->nodeHandle->get_parameter("filteringFrame", this->filteringFrame);
+  this->nodeHandle->get_parameter_or("filteringFrame", this->filteringFrame, this->fixedFrame);
   RCLCPP_DEBUG(this->nodeHandle->get_logger(), "filtering frame: %s", this->filteringFrame.c_str());
   stripLeadingSlash(this->sensorFrame, true);
   this->nodeHandle->get_parameter("minDistance", this->minDistance);
@@ -196,7 +196,7 @@ bool RobotBodyFilter<T>::configure() {
   const bool doShadowTest = tempDoShadowTest;
 
   double tempMaxShadowDistance;
-  this->nodeHandle->get_parameter("filter/max_shadow_distance", tempMaxShadowDistance);
+  this->nodeHandle->get_parameter_or("filter/max_shadow_distance", tempMaxShadowDistance, this->maxDistance);
   const double maxShadowDistance = tempMaxShadowDistance;
 
   double tempReachableTransformTimeout;
@@ -247,7 +247,7 @@ bool RobotBodyFilter<T>::configure() {
 
   this->nodeHandle->get_parameter("local_bounding_box/marker", this->publishLocalBoundingBoxMarker);
 
-  this->nodeHandle->get_parameter("local_bounding_box/frame_id", this->localBoundingBoxFrame);
+  this->nodeHandle->get_parameter_or("local_bounding_box/frame_id", this->localBoundingBoxFrame, this->fixedFrame);
 
   this->nodeHandle->get_parameter("debug/pcl/inside", this->publishDebugPclInside);
 
@@ -369,7 +369,7 @@ bool RobotBodyFilter<T>::configure() {
 
   // can contain either whole link names, or scoped names of their
   // collisions (i.e. "link::collision_1" or "link::my_collision")
-  // Note: ROS2 does not by default have a set parameter, this was the
+  // Note: ROS2 does not by default have a std::set parameter, this was the
   // workaround
   std::vector<std::string> tempLinksIgnoredInBoundingSphereVector;
   this->nodeHandle->get_parameter("ignored_links/bounding_sphere", tempLinksIgnoredInBoundingSphereVector);
@@ -412,8 +412,6 @@ bool RobotBodyFilter<T>::configure() {
   // this->reloadRobotModelServiceServer = this->nodeHandle->template create_service<std_srvs::srv::Trigger>(
   //     "reload_model", std::bind(&RobotBodyFilter::triggerModelReload, this, std::placeholders::_1, std::placeholders::_2));
 
-
-
   if (this->computeBoundingSphere) {
     this->boundingSpherePublisher = nodeHandle->create_publisher<shape_msgs::msg::SolidPrimitive>("robot_bounding_sphere", rclcpp::QoS(100));
   }
@@ -422,150 +420,127 @@ bool RobotBodyFilter<T>::configure() {
     this->boundingBoxPublisher = nodeHandle->create_publisher<geometry_msgs::msg::PolygonStamped>("robot_bounding_box", rclcpp::QoS(100));
   }
 
-  // if (this->computeOrientedBoundingBox) {
-  //   this->orientedBoundingBoxPublisher = this->nodeHandle->template
-  //   advertise<OrientedBoundingBoxStamped>("robot_oriented_bounding_box",
-  //   100);
-  // }
+  if (this->computeOrientedBoundingBox) {
+    this->orientedBoundingBoxPublisher = nodeHandle->create_publisher<shape_msgs::msg::SolidPrimitive>("robot_oriented_bounding_box", rclcpp::QoS(100));
+  }
 
-  // if (this->computeLocalBoundingBox) {
-  //   this->localBoundingBoxPublisher = this->nodeHandle->template
-  //   advertise<geometry_msgs::msg::PolygonStamped>("robot_local_bounding_box",
-  //   100);
-  // }
+  if (this->computeLocalBoundingBox) {
+    this->localBoundingBoxPublisher = nodeHandle->create_publisher<geometry_msgs::msg::PolygonStamped>("robot_local_bounding_box", rclcpp::QoS(100));
+  }
 
-  // if (this->publishBoundingSphereMarker && this->computeBoundingSphere) {
-  //   this->boundingSphereMarkerPublisher = this->nodeHandle->template
-  //   advertise<visualization_msgs::msg::Marker>("robot_bounding_sphere_marker",
-  //   100);
-  // }
+  if (this->publishBoundingSphereMarker && this->computeBoundingSphere) {
+    this->boundingSphereMarkerPublisher = this->nodeHandle->template
+    create_publisher<visualization_msgs::msg::Marker>("robot_bounding_sphere_marker",
+    100);
+  }
 
-  // if (this->publishBoundingBoxMarker && this->computeBoundingBox) {
-  //   this->boundingBoxMarkerPublisher = this->nodeHandle->template
-  //   advertise<visualization_msgs::msg::Marker>("robot_bounding_box_marker",
-  //   100);
-  // }
+  if (this->publishBoundingBoxMarker && this->computeBoundingBox) {
+    this->boundingBoxMarkerPublisher = this->nodeHandle->template
+    create_publisher<visualization_msgs::msg::Marker>("robot_bounding_box_marker",
+    100);
+  }
 
-  // if (this->publishOrientedBoundingBoxMarker &&
-  // this->computeOrientedBoundingBox) {
-  //   this->orientedBoundingBoxMarkerPublisher = this->nodeHandle->template
-  //   advertise<visualization_msgs::msg::Marker>("robot_oriented_bounding_box_marker",
-  //   100);
-  // }
+  if (this->publishOrientedBoundingBoxMarker && this->computeOrientedBoundingBox) {
+    this->orientedBoundingBoxMarkerPublisher = this->nodeHandle->template
+    create_publisher<visualization_msgs::msg::Marker>("robot_oriented_bounding_box_marker",
+    100);
+  }
 
-  // if (this->publishLocalBoundingBoxMarker &&
-  // this->computeLocalBoundingBox) {
-  //   this->localBoundingBoxMarkerPublisher = this->nodeHandle->template
-  //   advertise<visualization_msgs::msg::Marker>("robot_local_bounding_box_marker",
-  //   100);
-  // }
+  if (this->publishLocalBoundingBoxMarker && this->computeLocalBoundingBox) {
+    this->localBoundingBoxMarkerPublisher = this->nodeHandle->template
+    create_publisher<visualization_msgs::msg::Marker>("robot_local_bounding_box_marker",
+    100);
+  }
 
-  // if (this->publishNoBoundingBoxPointcloud)
-  // {
-  //   this->scanPointCloudNoBoundingBoxPublisher =
-  //   this->nodeHandle->template
-  //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_no_bbox",
-  //   100);
-  // }
+  if (this->publishNoBoundingBoxPointcloud) {
+    this->scanPointCloudNoBoundingBoxPublisher = this->nodeHandle->template
+    create_publisher<sensor_msgs::msg::PointCloud2>("scan_point_cloud_no_bbox",
+    100);
+  }
 
-  // if (this->publishNoOrientedBoundingBoxPointcloud)
-  // {
-  //   this->scanPointCloudNoOrientedBoundingBoxPublisher =
-  //   this->nodeHandle->template
-  //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_no_oriented_bbox",
-  //   100);
-  // }
+  if (this->publishNoOrientedBoundingBoxPointcloud) {
+    this->scanPointCloudNoOrientedBoundingBoxPublisher = this->nodeHandle->template
+    create_publisher<sensor_msgs::msg::PointCloud2>("scan_point_cloud_no_oriented_bbox",
+    100);
+  }
 
-  // if (this->publishNoLocalBoundingBoxPointcloud)
-  // {
-  //   this->scanPointCloudNoLocalBoundingBoxPublisher =
-  //   this->nodeHandle->template
-  //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_no_local_bbox",
-  //   100);
-  // }
+  if (this->publishNoLocalBoundingBoxPointcloud) {
+    this->scanPointCloudNoLocalBoundingBoxPublisher = this->nodeHandle->template
+    create_publisher<sensor_msgs::msg::PointCloud2>("scan_point_cloud_no_local_bbox",
+    100);
+  }
 
-  // if (this->publishNoBoundingSpherePointcloud)
-  // {
-  //   this->scanPointCloudNoBoundingSpherePublisher =
-  //   this->nodeHandle->template
-  //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_no_bsphere",
-  //   100);
-  // }
+  if (this->publishNoBoundingSpherePointcloud) {
+    this->scanPointCloudNoBoundingSpherePublisher = this->nodeHandle->template
+    create_publisher<sensor_msgs::msg::PointCloud2>("scan_point_cloud_no_bsphere",
+    100);
+  }
 
-  // if (this->publishDebugPclInside)
-  // {
-  //   this->debugPointCloudInsidePublisher = this->nodeHandle->template
-  //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_inside",
-  //   100);
-  // }
+  if (this->publishDebugPclInside) {
+    this->debugPointCloudInsidePublisher = this->nodeHandle->template
+    create_publisher<sensor_msgs::msg::PointCloud2>("scan_point_cloud_inside",
+    100);
+  }
 
-  // if (this->publishDebugPclClip)
-  // {
-  //   this->debugPointCloudClipPublisher = this->nodeHandle->template
-  //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_clip",
-  //   100);
-  // }
+  if (this->publishDebugPclClip) {
+    this->debugPointCloudClipPublisher = this->nodeHandle->template
+    create_publisher<sensor_msgs::msg::PointCloud2>("scan_point_cloud_clip",
+    100);
+  }
 
-  // if (this->publishDebugPclShadow)
-  // {
-  //   this->debugPointCloudShadowPublisher = this->nodeHandle->template
-  //   advertise<sensor_msgs::msg::PointCloud2>("scan_point_cloud_shadow",
-  //   100);
-  // }
+  if (this->publishDebugPclShadow) {
+    this->debugPointCloudShadowPublisher = this->nodeHandle->template
+    create_publisher<sensor_msgs::msg::PointCloud2>("scan_point_cloud_shadow",
+    100);
+  }
 
-  // if (this->publishDebugContainsMarker)
-  // {
-  //   this->debugContainsMarkerPublisher = this->nodeHandle->template
-  //   advertise<visualization_msgs::msg::MarkerArray>("robot_model_for_contains_test",
-  //   100);
-  // }
+  if (this->publishDebugContainsMarker) {
+    this->debugContainsMarkerPublisher = this->nodeHandle->template
+    create_publisher<visualization_msgs::msg::MarkerArray>("robot_model_for_contains_test",
+    100);
+  }
 
-  // if (this->publishDebugShadowMarker)
-  // {
-  //   this->debugShadowMarkerPublisher = this->nodeHandle->template
-  //   advertise<visualization_msgs::msg::MarkerArray>("robot_model_for_shadow_test",
-  //   100);
-  // }
+  if (this->publishDebugShadowMarker) {
+    this->debugShadowMarkerPublisher = this->nodeHandle->template
+    create_publisher<visualization_msgs::msg::MarkerArray>("robot_model_for_shadow_test",
+    100);
+  }
 
-  // if (this->publishDebugBsphereMarker)
-  // {
-  //   this->debugBsphereMarkerPublisher = this->nodeHandle->template
-  //   advertise<visualization_msgs::msg::MarkerArray>("robot_model_for_bounding_sphere",
-  //   100);
-  // }
+  if (this->publishDebugBsphereMarker) {
+    this->debugBsphereMarkerPublisher = this->nodeHandle->template
+    create_publisher<visualization_msgs::msg::MarkerArray>("robot_model_for_bounding_sphere",
+    100);
+  }
 
-  // if (this->publishDebugBboxMarker)
-  // {
-  //   this->debugBboxMarkerPublisher = this->nodeHandle->template
-  //   advertise<visualization_msgs::msg::MarkerArray>("robot_model_for_bounding_box",
-  //   100);
-  // }
+  if (this->publishDebugBboxMarker) {
+    this->debugBboxMarkerPublisher = this->nodeHandle->template
+    create_publisher<visualization_msgs::msg::MarkerArray>("robot_model_for_bounding_box",
+    100);
+  }
 
-  // if (this->computeDebugBoundingBox) {
-  //   this->boundingBoxDebugMarkerPublisher = this->nodeHandle->template
-  //   advertise<visualization_msgs::msg::MarkerArray>(
-  //     "robot_bounding_box_debug", 100);
-  // }
+  if (this->computeDebugBoundingBox) {
+    this->boundingBoxDebugMarkerPublisher = this->nodeHandle->template
+    create_publisher<visualization_msgs::msg::MarkerArray>("robot_bounding_box_debug",
+    100);
+  }
 
-  // if (this->computeDebugOrientedBoundingBox) {
-  //   this->orientedBoundingBoxDebugMarkerPublisher =
-  //   this->nodeHandle->template
-  //   advertise<visualization_msgs::msg::MarkerArray>(
-  //     "robot_oriented_bounding_box_debug", 100);
-  // }
+  if (this->computeDebugOrientedBoundingBox) {
+    this->orientedBoundingBoxDebugMarkerPublisher = this->nodeHandle->template
+    create_publisher<visualization_msgs::msg::MarkerArray>("robot_oriented_bounding_box_debug",
+    100);
+  }
 
-  // if (this->computeDebugLocalBoundingBox) {
-  //   this->localBoundingBoxDebugMarkerPublisher =
-  //   this->nodeHandle->template
-  //   advertise<visualization_msgs::msg::MarkerArray>(
-  //     "robot_local_bounding_box_debug", 100);
-  // }
+  if (this->computeDebugLocalBoundingBox) {
+    this->localBoundingBoxDebugMarkerPublisher = this->nodeHandle->template
+    create_publisher<visualization_msgs::msg::MarkerArray>("robot_local_bounding_box_debug",
+    100);
+  }
 
-  // if (this->computeDebugBoundingSphere) {
-  //   this->boundingSphereDebugMarkerPublisher = this->nodeHandle->template
-  //   advertise<visualization_msgs::msg::MarkerArray>(
-  //     "robot_bounding_sphere_debug", 100);
-  // }
+  if (this->computeDebugBoundingSphere) {
+    this->boundingSphereDebugMarkerPublisher = this->nodeHandle->template
+    create_publisher<visualization_msgs::msg::MarkerArray>("robot_bounding_sphere_debug",
+    100);
+  }
 
   // initialize the 3D body masking tool
   auto getShapeTransformCallback =
@@ -666,6 +641,7 @@ bool RobotBodyFilter<T>::configure() {
   this->timeConfigured = this->nodeHandle->now();
 
   //Bad idea?
+  //This should be handeled by the robotDescriptionUpdate callback
   this->configured_ = true;
 
   return true;
@@ -683,7 +659,7 @@ bool RobotBodyFilterPointCloud2::configure() {
   bool success = RobotBodyFilter::configure();
   if (!success) return false;
 
-  this->nodeHandle->get_parameter("frames/output", this->outputFrame);
+  this->nodeHandle->get_parameter_or("frames/output", this->outputFrame, this->filteringFrame);
   std::vector<std::string> tempPointChannels;
   std::vector<std::string> tempDirectionChannels;
   this->nodeHandle->get_parameter("cloud/point_channels", tempPointChannels);
@@ -812,12 +788,12 @@ bool RobotBodyFilter<T>::computeMask(
   RCLCPP_DEBUG(nodeHandle->get_logger(), "RobotBodyFilter: Mask computed in %.5f secs.",
                double(clock() - stopwatchOverall) / CLOCKS_PER_SEC);
 
-  // this->publishDebugPointClouds(projectedPointCloud, pointMask);
-  // this->publishDebugMarkers(scanTime);
-  // this->computeAndPublishBoundingSphere(projectedPointCloud);
-  // this->computeAndPublishBoundingBox(projectedPointCloud);
-  // this->computeAndPublishOrientedBoundingBox(projectedPointCloud);
-  // this->computeAndPublishLocalBoundingBox(projectedPointCloud);
+  this->publishDebugPointClouds(projectedPointCloud, pointMask);
+  this->publishDebugMarkers(scanTime);
+  this->computeAndPublishBoundingSphere(projectedPointCloud);
+  this->computeAndPublishBoundingBox(projectedPointCloud);
+  this->computeAndPublishOrientedBoundingBox(projectedPointCloud);
+  this->computeAndPublishLocalBoundingBox(projectedPointCloud);
 
   RCLCPP_DEBUG(nodeHandle->get_logger(), "RobotBodyFilter: Filtering run time is %.5f secs.",
                double(clock() - stopwatchOverall) / CLOCKS_PER_SEC);
@@ -1116,25 +1092,33 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2& inp
 
   // Transform to filtering frame
   RCLCPP_ERROR(nodeHandle->get_logger(), "TRANSFORM");
+  RCLCPP_INFO(nodeHandle->get_logger(), "RobotBodyFilter: Transforming cloud from frame %s to %s",
+               inputCloud.header.frame_id.c_str(), this->filteringFrame.c_str());
+
+  RCLCPP_ERROR(nodeHandle->get_logger(), "TRANSFORM1.25");
 
   sensor_msgs::msg::PointCloud2 transformedCloud;
   if (inputCloud.header.frame_id == this->filteringFrame) {
     transformedCloud = inputCloud;
+    RCLCPP_ERROR(nodeHandle->get_logger(), "TRANSFORM1.5");
   } else {
     RCLCPP_INFO_ONCE(nodeHandle->get_logger(), "RobotBodyFilter: Transforming cloud from frame %s to %s",
                      inputCloud.header.frame_id.c_str(), this->filteringFrame.c_str());
+    RCLCPP_ERROR(nodeHandle->get_logger(), "TRANSFORM1.5");
     std::lock_guard<std::mutex> guard(*this->modelMutex);
     std::string err;
-    if (!this->tfBuffer->canTransform("base_link", "base_link", scanTime,
+    RCLCPP_INFO(nodeHandle->get_logger(), "remaining time: %f", remainingTime(*this->nodeHandle->get_clock(), scanTime, this->reachableTransformTimeout).seconds());
+    if (!this->tfBuffer->canTransform(this->filteringFrame, inputCloud.header.frame_id, scanTime,
                                       remainingTime(*this->nodeHandle->get_clock(), scanTime, this->reachableTransformTimeout), &err)) {
       auto& clk = *nodeHandle->get_clock();
       RCLCPP_ERROR_THROTTLE(nodeHandle->get_logger(), clk, 3,
                             "RobotBodyFilter: Cannot transform "
                             "point cloud to filtering frame. Something's wrong with TFs: %s",
                             err.c_str());
+      RCLCPP_ERROR(nodeHandle->get_logger(), "TRANSFORM1.75");
       return false;
     }
-
+    RCLCPP_ERROR(nodeHandle->get_logger(), "Before Transform");
     transformWithChannels(inputCloud, transformedCloud, *this->tfBuffer, this->filteringFrame,
                           this->channelsToTransform);
   }
@@ -1167,7 +1151,7 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2& inp
                      tmpCloud.header.frame_id.c_str(), this->outputFrame.c_str());
     std::lock_guard<std::mutex> guard(*this->modelMutex);
     std::string err;
-    if (!this->tfBuffer->canTransform("laser", "base_link", scanTime,
+    if (!this->tfBuffer->canTransform(this->outputFrame, tmpCloud.header.frame_id, scanTime,
                                       remainingTime(*this->nodeHandle->get_clock(), scanTime, this->reachableTransformTimeout), &err)) {
       auto& clk = *nodeHandle->get_clock();
       RCLCPP_ERROR_THROTTLE(nodeHandle->get_logger(), clk, 3,
@@ -1536,6 +1520,8 @@ void RobotBodyFilter<T>::computeAndPublishBoundingSphere(
     const sensor_msgs::msg::PointCloud2& projectedPointCloud) const {
   if (!this->computeBoundingSphere && !this->computeDebugBoundingSphere) return;
 
+  RCLCPP_INFO(nodeHandle->get_logger(), "Computing bounding sphere");
+
   // assume this->modelMutex is locked
 
   // when computing bounding spheres for publication, we want to publish them to
@@ -1550,23 +1536,28 @@ void RobotBodyFilter<T>::computeAndPublishBoundingSphere(
   std::vector<bodies::BoundingSphere> spheres;
   {
     visualization_msgs::msg::MarkerArray boundingSphereDebugMsg;
+      RCLCPP_INFO(nodeHandle->get_logger(), "Compute Bounding Sphere Debug bool: %d", this->computeDebugBoundingSphere);
+
     for (const auto& shapeHandleAndBody : this->shapeMask->getBodiesForBoundingSphere()) {
       const auto& shapeHandle = shapeHandleAndBody.first;
       const auto& body = shapeHandleAndBody.second;
-
+      RCLCPP_INFO(nodeHandle->get_logger(), "Compute Bounding Sphere Debug bool: %d", this->computeDebugBoundingSphere);
       if (this->shapesIgnoredInBoundingSphere.find(shapeHandle) != this->shapesIgnoredInBoundingSphere.end()) continue;
 
       bodies::BoundingSphere sphere;
       body->computeBoundingSphere(sphere);
 
       spheres.push_back(sphere);
-
+      RCLCPP_INFO(nodeHandle->get_logger(), "Compute Bounding Sphere Debug bool: %d", this->computeDebugBoundingSphere);
       if (this->computeDebugBoundingSphere) {
+        RCLCPP_INFO(nodeHandle->get_logger(), "Computing debug sphere");
         visualization_msgs::msg::Marker msg;
         msg.header.stamp = scanTime;
         msg.header.frame_id = this->filteringFrame;
 
         msg.scale.x = msg.scale.y = msg.scale.z = sphere.radius * 2;
+
+        RCLCPP_INFO(nodeHandle->get_logger(), "Sphere center: %f %f %f", sphere.center[0], sphere.center[1], sphere.center[2]);
 
         msg.pose.position.x = sphere.center[0];
         msg.pose.position.y = sphere.center[1];

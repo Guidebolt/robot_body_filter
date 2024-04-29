@@ -1,5 +1,7 @@
 /* HACK HACK HACK */
 /* We want to subclass ShapeMask and use its private members. */
+#include <rclcpp/logger.hpp>
+#include <rclcpp/logging.hpp>
 #include <sstream>  // has to be there, otherwise we encounter build problems
 #define private protected
 #include <moveit/point_containment_filter/shape_mask.h>
@@ -161,22 +163,21 @@ void RayCastingShapeMask::updateBodyPosesNoLock()
     else
     {
       if (containsBody == nullptr){
-        // ROS_ERROR_STREAM_DELAYED_THROTTLE_NAMED(3, "shape_mask",
-        //     "Missing transform for shape with handle " << containsHandle
-        //     << " without a body");
+        RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape with handle %s without a body", containsHandle);
     }
       else {
         std::string name;
         if (this->data->shapeNames.find(containsHandle) != this->data->shapeNames.end())
           name = this->data->shapeNames.at(containsHandle);
 
-        // if (name.empty())
-        //   ROS_ERROR_STREAM_DELAYED_THROTTLE_NAMED(3, "shape_mask",
-        //       "Missing transform for shape " << containsBody->getType()
-        //       << " with handle " << containsHandle);
-        // else
-        //   ROS_ERROR_STREAM_DELAYED_THROTTLE_NAMED(3, "shape_mask",
-        //       "Missing transform for shape " << name << " (" << containsBody->getType() << ")");
+        if (name.empty())
+        {
+          RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape %s with handle %s", containsBody->getType(), containsHandle);
+        }
+        else
+        {
+          RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape %s (%s)", name.c_str(), containsBody->getType());
+        }
       }
     }
   }

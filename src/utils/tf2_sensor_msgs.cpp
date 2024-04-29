@@ -37,10 +37,10 @@ void transformChannel(const sensor_msgs::msg::PointCloud2& cloudIn, sensor_msgs:
 {
   if (num_points(cloudIn) == 0)
     return;
-
+RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"), "after num points");
   if (type == CloudChannelType::SCALAR)
     return;
-
+RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"), "after scalar check");
   CloudConstIter x_in(cloudIn, channelPrefix + "x");
   CloudConstIter y_in(cloudIn, channelPrefix + "y");
   CloudConstIter z_in(cloudIn, channelPrefix + "z");
@@ -60,7 +60,9 @@ void transformChannel(const sensor_msgs::msg::PointCloud2& cloudIn, sensor_msgs:
         *x_out = point.x();
         *y_out = point.y();
         *z_out = point.z();
+      // RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"), "looping");
       }
+      RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"), "break");
       break;
     case CloudChannelType::DIRECTION:
       for (; x_out != x_out.end(); ++x_in, ++y_in, ++z_in, ++x_out, ++y_out, ++z_out)
@@ -69,7 +71,10 @@ void transformChannel(const sensor_msgs::msg::PointCloud2& cloudIn, sensor_msgs:
         *x_out = point.x();
         *y_out = point.y();
         *z_out = point.z();
+      // RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"), "looping");
+
       }
+      RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"), "break");
       break;
     case CloudChannelType::SCALAR:
     //TODO: ADD WARNING FOR NOT SUPPORTED
@@ -95,6 +100,7 @@ sensor_msgs::msg::PointCloud2& transformWithChannels(
     const std::unordered_map<std::string, CloudChannelType>& channels)
 {
   std::unordered_set<std::string> channelsPresent;
+  RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"), "first loop");
   for (const auto& field: in.fields) {
     for (const auto& channelAndType : channels)
     {
@@ -105,15 +111,16 @@ sensor_msgs::msg::PointCloud2& transformWithChannels(
     }
   }
 
+
   out = in;
   out.header = tf.header;
 
   const auto t = tf2::transformToEigen(tf).cast<float>();
-
   transformChannel(in, out, t, "", CloudChannelType::POINT);
+  RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"), "second loop");
   for (const auto& channel : channelsPresent)
     transformChannel(in, out, t, channel, channels.at(channel));
-
+    RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"), "before return");
   return out;
 }
 
