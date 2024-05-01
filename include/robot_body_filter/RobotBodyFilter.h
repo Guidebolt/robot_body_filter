@@ -8,6 +8,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 // #include <robot_body_filter/utils/filter_utils.hpp>
+// #include <robot_body_filter/robot_body_filter/msg/oriented_bounding_box_stamped.hpp>
 #include <robot_body_filter/utils/tf2_sensor_msgs.h>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <robot_body_filter/RayCastingShapeMask.h>
@@ -205,7 +206,9 @@ protected:
   std::string robotDescriptionParam;
 
   //! Subscriber for robot_description updates.
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr robotDescriptionUpdatesListener;
+  std::shared_ptr<rclcpp::AsyncParametersClient> robotDescriptionUpdatesListener;
+  // Callback group for dynamic updates
+  rclcpp::CallbackGroup::SharedPtr AsyncCallbackGroup;
 
   //! Name of the field in the dynamic reconfigure message that contains robot model.
   std::string robotDescriptionUpdatesFieldName;

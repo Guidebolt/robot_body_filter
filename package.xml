@@ -18,7 +18,7 @@
 
   <!-- <depend>dynamic_reconfigure</depend> -->
   <depend>filters</depend>
-  <depend>geometric_shapes</depend>
+  <depend>geometric_shapes_local</depend>
   <depend>geometry_msgs</depend>
   <depend>laser_geometry</depend>
   <depend>libpcl-all-dev</depend>
@@ -33,6 +33,7 @@
   <depend>urdf</depend>
   <depend>visualization_msgs</depend>
   <depend>pcl_conversions</depend>
+  <depend>urdf_parser_plugin</depend>
   <!-- <depend>fcl</depend> -->
 
   <build_depend>tf2_eigen</build_depend>
