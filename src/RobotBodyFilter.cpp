@@ -123,12 +123,12 @@ void RobotBodyFilter<T>::DeclareParameters(){
   this->nodeHandle->declare_parameters("body_model/inflation/per_link/padding", std::map<std::string, double>());
   this->nodeHandle->declare_parameters("body_model/inflation/per_link/scale", std::map<std::string, double>());
 
-  this->nodeHandle->declare_parameter("ignored_links/bounding_sphere", std::vector<std::string>{""});
-  this->nodeHandle->declare_parameter("ignored_links/bounding_box", std::vector<std::string>{""});
-  this->nodeHandle->declare_parameter("ignored_links/contains_test", std::vector<std::string>{""});
-  this->nodeHandle->declare_parameter("ignored_links/shadow_test", std::vector<std::string>{"laser"});
-  this->nodeHandle->declare_parameter("ignored_links/everywhere", std::vector<std::string>{""});
-  this->nodeHandle->declare_parameter("only_links", std::vector<std::string>{""});
+  this->nodeHandle->declare_parameter("ignored_links/bounding_sphere", std::vector<std::string>{});
+  this->nodeHandle->declare_parameter("ignored_links/bounding_box", std::vector<std::string>{});
+  this->nodeHandle->declare_parameter("ignored_links/contains_test", std::vector<std::string>{});
+  this->nodeHandle->declare_parameter("ignored_links/shadow_test", std::vector<std::string>{});
+  this->nodeHandle->declare_parameter("ignored_links/everywhere", std::vector<std::string>{});
+  this->nodeHandle->declare_parameter("only_links", std::vector<std::string>{});
   this->nodeHandle->declare_parameter("body_model/dynamic_robot_description/field_name", "robot_model");
 
   this->nodeHandle->declare_parameter("frames/output", "base_link");
@@ -137,7 +137,7 @@ void RobotBodyFilter<T>::DeclareParameters(){
   this->nodeHandle->declare_parameter("transforms/buffer_length", 60.0);
 
   //TESTING
-  this->nodeHandle->declare_parameter("robot_description", std::string{""});
+  this->nodeHandle->declare_parameter("robot_description", std::string{});
 }
 
 template <typename T>
@@ -599,6 +599,7 @@ bool RobotBodyFilter<T>::configure() {
   if (doShadowTest) RCLCPP_INFO(nodeHandle->get_logger(), "RobotBodyFilter: \tSHADOW");
 
   if (this->onlyLinks.empty()) {
+    RCLCPP_INFO(nodeHandle->get_logger(),"RobotBodyFilter: onlyLinks is empty");
     if (this->linksIgnoredEverywhere.empty()) {
       RCLCPP_INFO(nodeHandle->get_logger(),"RobotBodyFilter: Filtering applied to all links.");
     } else {
@@ -611,24 +612,13 @@ bool RobotBodyFilter<T>::configure() {
       RCLCPP_INFO(nodeHandle->get_logger(),"RobotBodyFilter: Filtering applied to links %s.", to_string(this->onlyLinks).c_str());
     } 
     else {
-    //TODO: Remove
-      std::stringstream ss;
-      ss << "[";
-      size_t i = 0;
-      for (const auto& v : this->onlyLinks) {
-        if (std::is_same<std::string, T>::value)
-          ss << "\"" << to_string(v) << "\"";
-        else
-          ss << to_string(v);
-        if (i + 1 < this->onlyLinks.size()) ss << ", ";
-        ++i;
-      }
-      ss << "]";
-      RCLCPP_INFO(nodeHandle->get_logger(),"RobotBodyFilter: Filtering applied to links %s with these links excluded: %s.", "test", ss.str().c_str());
-      auto localOnlyLinks = this->onlyLinks;
-      // auto onlyLinks = to_string(localOnlyLinks).c_str();
-      // to_string(this->onlyLinks).c_str());
-      // to_string(this->linksIgnoredEverywhere).c_str());
+    //TODO: The to_string call is crashing at runtime here, dont understand why
+    // RCLCPP_INFO(nodeHandle->get_logger(),
+    //             "RobotBodyFilter: Filtering applied to links %s with these links excluded: %s.",
+    //             to_string(tempOnlyLinks).c_str(), to_string(tempLinksIgnoredEverywhere).c_str());
+    for (const auto& link : this->onlyLinks) {
+      RCLCPP_INFO(nodeHandle->get_logger(), "RobotBodyFilter: Filtering only applied to link %s.", link.c_str());
+    }
     }
   }
 
@@ -1277,7 +1267,7 @@ void RobotBodyFilter<T>::addRobotMaskFromUrdf(const std::string& urdfModel) {
 
     // add all model's collision links as masking shapes
     for (const auto& links : parsedUrdfModel.links_) {
-      RCLCPP_INFO(nodeHandle->get_logger(), "RobotBodyFilter: Adding link %s to the mask.", links.first.c_str());
+      RCLCPP_DEBUG(nodeHandle->get_logger(), "RobotBodyFilter: Adding link %s to the mask.", links.first.c_str());
       const auto& link = links.second;
 
       // every link can have multiple collision elements
@@ -1620,9 +1610,9 @@ void RobotBodyFilter<T>::computeAndPublishBoundingBox(const sensor_msgs::msg::Po
 
   const auto& scanTime = projectedPointCloud.header.stamp;
   std::vector<bodies::AxisAlignedBoundingBox> boxes;
-
   {
     visualization_msgs::msg::MarkerArray boundingBoxDebugMsg;
+    RCLCPP_INFO(nodeHandle->get_logger(), "Number of bodies: %zu", this->shapeMask->getBodiesForBoundingBox().size());
     for (const auto& shapeHandleAndBody : this->shapeMask->getBodiesForBoundingBox()) {
       const auto& shapeHandle = shapeHandleAndBody.first;
       const auto& body = shapeHandleAndBody.second;
