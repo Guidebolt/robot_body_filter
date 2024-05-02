@@ -567,28 +567,28 @@ bool RobotBodyFilter<T>::configure() {
         robotDescriptionUpdated(msg);
       });
 
-  {  // initialize the robot body to be masked out
-    // auto sleeper = rclcpp::Rate(rclcpp::Duration::from_seconds(1.0).nanoseconds());
-    // std::string robotUrdf;
-    // while (!this->nodeHandle->get_parameter(this->robotDescriptionParam.c_str(), robotUrdf) || robotUrdf.length() == 0) {
-    //   if (this->failWithoutRobotDescription) {
-    //     throw std::runtime_error("RobotBodyFilter: " + this->robotDescriptionParam + " is empty or not set.");
-    //   }
-    //   if (!rclcpp::ok()) return false;
+  // {  // initialize the robot body to be masked out
+  //   auto sleeper = rclcpp::Rate(rclcpp::Duration::from_seconds(1.0).nanoseconds());
+  //   std::string robotUrdf;
+  //   while (!this->nodeHandle->get_parameter(this->robotDescriptionParam.c_str(), robotUrdf) || robotUrdf.length() == 0) {
+  //     if (this->failWithoutRobotDescription) {
+  //       throw std::runtime_error("RobotBodyFilter: " + this->robotDescriptionParam + " is empty or not set.");
+  //     }
+  //     if (!rclcpp::ok()) return false;
 
-    //   RCLCPP_ERROR(this->nodeHandle->get_logger(),
-    //                "RobotBodyFilter: %s is empty or not set. Please, provide "
-    //                "the robot model. Waiting 1s. ",
-    //                robotDescriptionParam.c_str());
-    //   rclcpp::sleep_for(std::chrono::seconds(1));
-    // }
+  //     RCLCPP_ERROR(this->nodeHandle->get_logger(),
+  //                  "RobotBodyFilter: %s is empty or not set. Please, provide "
+  //                  "the robot model. Waiting 1s. ",
+  //                  robotDescriptionParam.c_str());
+  //     rclcpp::sleep_for(std::chrono::seconds(1));
+  //   }
 
-    // // happens when configure() is called again from update() (e.g. when
-    // // a new bag file started
-    // // playing)
-    // if (!this->shapesToLinks.empty()) this->clearRobotMask();
-    // this->addRobotMaskFromUrdf(robotUrdf);
-  }
+  //   // happens when configure() is called again from update() (e.g. when
+  //   // a new bag file started
+  //   // playing)
+  //   if (!this->shapesToLinks.empty()) this->clearRobotMask();
+  //   this->addRobotMaskFromUrdf(robotUrdf);
+  // }
 
   RCLCPP_INFO(nodeHandle->get_logger(), "RobotBodyFilter: Successfullyconfigured.");
   RCLCPP_INFO(nodeHandle->get_logger(), "Filtering data inframe %s", this->filteringFrame.c_str());
@@ -772,8 +772,11 @@ bool RobotBodyFilter<T>::computeMask(
   this->publishDebugMarkers(scanTime);
   this->computeAndPublishBoundingSphere(projectedPointCloud);
   this->computeAndPublishBoundingBox(projectedPointCloud);
-  this->computeAndPublishOrientedBoundingBox(projectedPointCloud);
-  this->computeAndPublishLocalBoundingBox(projectedPointCloud);
+  RCLCPP_INFO(nodeHandle->get_logger(), "computed and published bounding box");
+  // this->computeAndPublishOrientedBoundingBox(projectedPointCloud);
+  RCLCPP_INFO(nodeHandle->get_logger(), "computed and published oriented bounding box");
+  // this->computeAndPublishLocalBoundingBox(projectedPointCloud);
+  RCLCPP_INFO(nodeHandle->get_logger(), "computed and published local bounding box");
 
   RCLCPP_DEBUG(nodeHandle->get_logger(), "RobotBodyFilter: Filtering run time is %.5f secs.",
                double(clock() - stopwatchOverall) / CLOCKS_PER_SEC);
@@ -1526,8 +1529,6 @@ void RobotBodyFilter<T>::computeAndPublishBoundingSphere(
 
         msg.scale.x = msg.scale.y = msg.scale.z = sphere.radius * 2;
 
-        RCLCPP_INFO(nodeHandle->get_logger(), "Sphere center: %f %f %f", sphere.center[0], sphere.center[1], sphere.center[2]);
-
         msg.pose.position.x = sphere.center[0];
         msg.pose.position.y = sphere.center[1];
         msg.pose.position.z = sphere.center[2];
@@ -1614,13 +1615,17 @@ void RobotBodyFilter<T>::computeAndPublishBoundingBox(const sensor_msgs::msg::Po
     visualization_msgs::msg::MarkerArray boundingBoxDebugMsg;
     RCLCPP_INFO(nodeHandle->get_logger(), "Number of bodies: %zu", this->shapeMask->getBodiesForBoundingBox().size());
     for (const auto& shapeHandleAndBody : this->shapeMask->getBodiesForBoundingBox()) {
+      RCLCPP_INFO(nodeHandle->get_logger(), "declaring variables");
       const auto& shapeHandle = shapeHandleAndBody.first;
       const auto& body = shapeHandleAndBody.second;
-
+      RCLCPP_INFO(nodeHandle->get_logger(), "variables declared");
+      // RCLCPP_INFO(nodeHandle->get_logger(), "Looking for shape handle %s", to_string(shapeHandle).c_str());
       if (this->shapesIgnoredInBoundingBox.find(shapeHandle) != this->shapesIgnoredInBoundingBox.end()) continue;
 
       bodies::AxisAlignedBoundingBox box;
+      // RCLCPP_INFO(nodeHandle->get_logger(), "Computing bounding box for shape %s", to_string(shapeHandle).c_str());
       body->computeBoundingBox(box);
+      RCLCPP_INFO(nodeHandle->get_logger(), "Computed");
 
       boxes.push_back(box);
 
@@ -1646,6 +1651,7 @@ void RobotBodyFilter<T>::computeAndPublishBoundingBox(const sensor_msgs::msg::Po
     }
 
     if (this->computeDebugBoundingBox) {
+      RCLCPP_INFO(nodeHandle->get_logger(), "Publishing bounding box debug markers");
       this->boundingBoxDebugMarkerPublisher->publish(boundingBoxDebugMsg);
     }
   }
@@ -1664,6 +1670,7 @@ void RobotBodyFilter<T>::computeAndPublishBoundingBox(const sensor_msgs::msg::Po
     tf2::toMsg(box.min(), boundingBoxMsg.polygon.points[0]);
     tf2::toMsg(box.max(), boundingBoxMsg.polygon.points[1]);
 
+    RCLCPP_INFO(nodeHandle->get_logger(), "Publishing bounding box message");
     this->boundingBoxPublisher->publish(boundingBoxMsg);
 
     if (this->publishBoundingBoxMarker) {
@@ -1683,6 +1690,7 @@ void RobotBodyFilter<T>::computeAndPublishBoundingBox(const sensor_msgs::msg::Po
       msg.ns = "bounding_box";
       msg.frame_locked = static_cast<unsigned char>(true);
 
+      RCLCPP_INFO(nodeHandle->get_logger(), "Publishing bounding box Marker");
       this->boundingBoxMarkerPublisher->publish(msg);
     }
 
@@ -1705,7 +1713,7 @@ void RobotBodyFilter<T>::computeAndPublishBoundingBox(const sensor_msgs::msg::Po
       sensor_msgs::msg::PointCloud2::SharedPtr boxFilteredCloud(new sensor_msgs::msg::PointCloud2());
       pcl_conversions::moveFromPCL(pclOutput, *boxFilteredCloud);
       boxFilteredCloud->header.stamp = scanTime;  // PCL strips precision of timestamp
-
+      RCLCPP_INFO(nodeHandle->get_logger(), "Publish scan cloud");
       this->scanPointCloudNoBoundingBoxPublisher->publish(*boxFilteredCloud);
     }
   }

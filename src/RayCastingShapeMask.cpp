@@ -163,7 +163,7 @@ void RayCastingShapeMask::updateBodyPosesNoLock()
     else
     {
       if (containsBody == nullptr){
-        RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape with handle %s without a body", containsHandle);
+        // RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape with handle %s without a body", containsHandle);
     }
       else {
         std::string name;
@@ -172,11 +172,11 @@ void RayCastingShapeMask::updateBodyPosesNoLock()
 
         if (name.empty())
         {
-          RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape %s with handle %s", containsBody->getType(), containsHandle);
+          // RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape %s with handle %s", containsBody->getType(), containsHandle);
         }
         else
         {
-          RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape %s (%s)", name.c_str(), containsBody->getType());
+          // RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape %s (%s)", name.c_str(), containsBody->getType());
         }
       }
     }
@@ -354,7 +354,7 @@ MultiShapeHandle RayCastingShapeMask::addShape(
     const double bboxScale, const double bboxPadding, const bool updateInternalStructures, const std::string& name)
 {
   MultiShapeHandle result;
-
+  shape->print();
   result.contains = ShapeMask::addShape(shape, containsScale, containsPadding);
   this->data->shapeNames[result.contains] = name;
 
