@@ -354,7 +354,7 @@ MultiShapeHandle RayCastingShapeMask::addShape(
     const double bboxScale, const double bboxPadding, const bool updateInternalStructures, const std::string& name)
 {
   MultiShapeHandle result;
-  shape->print();
+
   result.contains = ShapeMask::addShape(shape, containsScale, containsPadding);
   this->data->shapeNames[result.contains] = name;
 

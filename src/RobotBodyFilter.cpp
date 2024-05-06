@@ -138,7 +138,6 @@ void RobotBodyFilter<T>::DeclareParameters(){
   this->nodeHandle->declare_parameter("cloud/direction_channels", std::vector<std::string>{"normal_"});
   this->nodeHandle->declare_parameter("transforms/buffer_length", 60.0);
 
-  //TESTING
   this->nodeHandle->declare_parameter("robot_description", std::string{});
 }
 
@@ -159,13 +158,10 @@ bool RobotBodyFilter<T>::configure() {
   }
 
   this->nodeHandle->get_parameter("fixedFrame", this->fixedFrame);
-  RCLCPP_DEBUG(this->nodeHandle->get_logger(), "Fixed frame: %s", this->fixedFrame.c_str());
   stripLeadingSlash(this->fixedFrame, true);
   this->nodeHandle->get_parameter("sensorFrame", this->sensorFrame);
-  RCLCPP_DEBUG(this->nodeHandle->get_logger(), "sensor frame: %s", this->sensorFrame.c_str());
   stripLeadingSlash(this->sensorFrame, true);
   this->nodeHandle->get_parameter_or("filteringFrame", this->filteringFrame, this->fixedFrame);
-  RCLCPP_DEBUG(this->nodeHandle->get_logger(), "filtering frame: %s", this->filteringFrame.c_str());
   stripLeadingSlash(this->sensorFrame, true);
   this->nodeHandle->get_parameter("minDistance", this->minDistance);
   this->nodeHandle->get_parameter("maxDistance", this->maxDistance);
