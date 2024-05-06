@@ -45,8 +45,10 @@ RobotBodyFilter<T>::RobotBodyFilter(std::shared_ptr<rclcpp::Node> inputNode)
 }
 
 void RobotBodyFilterPointCloud2::DeclareParameters(){
-  this->nodeHandle->declare_parameter("sensor/point_by_point", false);
-  RobotBodyFilter::DeclareParameters();
+  if (this->nodeHandle->has_parameter("sensor/point_by_point") == false){
+    this->nodeHandle->declare_parameter("sensor/point_by_point", false);
+    RobotBodyFilter::DeclareParameters(); 
+  }
 };
 
 template <typename T>
@@ -104,17 +106,17 @@ void RobotBodyFilter<T>::DeclareParameters(){
   this->nodeHandle->declare_parameter("debug/marker/bounding_box", false);
   param_desc.description = "m";
   this->nodeHandle->declare_parameter("body_model/inflation/padding", 0.0, param_desc);
-  this->nodeHandle->declare_parameter("body_model/inflation/scale", 1.0);
+  this->nodeHandle->declare_parameter("body_model/inflation/scale", 1.1);
   // NOTE: Default changed from inflationPadding/inflationScale to 0.0/1.0
   // TODO: Set defaults in GetParameter
-  this->nodeHandle->declare_parameter("body_model/inflation/contains_test/padding", 0.0, param_desc);
-  this->nodeHandle->declare_parameter("body_model/inflation/contains_test/scale", 1.0);
-  this->nodeHandle->declare_parameter("body_model/inflation/shadow_test/padding", 0.0, param_desc);
-  this->nodeHandle->declare_parameter("body_model/inflation/shadow_test/scale", 1.0);
-  this->nodeHandle->declare_parameter("body_model/inflation/bounding_sphere/padding", 0.0, param_desc);
-  this->nodeHandle->declare_parameter("body_model/inflation/bounding_sphere/scale", 1.0);
-  this->nodeHandle->declare_parameter("body_model/inflation/bounding_box/padding", 0.0, param_desc);
-  this->nodeHandle->declare_parameter("body_model/inflation/bounding_box/scale", 1.0);
+  this->nodeHandle->declare_parameter("body_model/inflation/contains_test/padding", rclcpp::ParameterType::PARAMETER_DOUBLE, param_desc);
+  this->nodeHandle->declare_parameter("body_model/inflation/contains_test/scale", rclcpp::ParameterType::PARAMETER_DOUBLE);
+  this->nodeHandle->declare_parameter("body_model/inflation/shadow_test/padding", rclcpp::ParameterType::PARAMETER_DOUBLE, param_desc);
+  this->nodeHandle->declare_parameter("body_model/inflation/shadow_test/scale", rclcpp::ParameterType::PARAMETER_DOUBLE);
+  this->nodeHandle->declare_parameter("body_model/inflation/bounding_sphere/padding", rclcpp::ParameterType::PARAMETER_DOUBLE, param_desc);
+  this->nodeHandle->declare_parameter("body_model/inflation/bounding_sphere/scale", rclcpp::ParameterType::PARAMETER_DOUBLE);
+  this->nodeHandle->declare_parameter("body_model/inflation/bounding_box/padding", rclcpp::ParameterType::PARAMETER_DOUBLE, param_desc);
+  this->nodeHandle->declare_parameter("body_model/inflation/bounding_box/scale", rclcpp::ParameterType::PARAMETER_DOUBLE);
 
   // TODO: This initialization may be incorrect, not sure if I understand how
   // this works
@@ -169,114 +171,72 @@ bool RobotBodyFilter<T>::configure() {
   this->nodeHandle->get_parameter("maxDistance", this->maxDistance);
   this->nodeHandle->get_parameter("body_model/robot_description_param", this->robotDescriptionParam);
   this->nodeHandle->get_parameter("filter/keep_clouds_organized", this->keepCloudsOrganized);
-
   double tempModelPoseUpdateInterval;
   this->nodeHandle->get_parameter("filter/model_pose_update_interval", tempModelPoseUpdateInterval);
   this->modelPoseUpdateInterval = rclcpp::Duration::from_seconds(tempModelPoseUpdateInterval);
-
   bool tempDoClipping;
   this->nodeHandle->get_parameter("filter/do_clipping", tempDoClipping);
   const bool doClipping = tempDoClipping;
-
   bool tempDoContainsTest;
   this->nodeHandle->get_parameter("filter/do_contains_test", tempDoContainsTest);
   const bool doContainsTest = tempDoContainsTest;
-
   bool tempDoShadowTest;
   this->nodeHandle->get_parameter("filter/do_shadow_test", tempDoShadowTest);
   const bool doShadowTest = tempDoShadowTest;
-
   double tempMaxShadowDistance;
   this->nodeHandle->get_parameter_or("filter/max_shadow_distance", tempMaxShadowDistance, this->maxDistance);
   const double maxShadowDistance = tempMaxShadowDistance;
-
   double tempReachableTransformTimeout;
   this->nodeHandle->get_parameter("transforms/timeout/reachable", tempReachableTransformTimeout);
   this->reachableTransformTimeout = rclcpp::Duration::from_seconds(tempReachableTransformTimeout);
-
   double tempUnreachableTransformTimeout;
   this->nodeHandle->get_parameter("transforms/timeout/unreachable", tempUnreachableTransformTimeout);
   this->unreachableTransformTimeout = rclcpp::Duration::from_seconds(tempUnreachableTransformTimeout);
-
   this->nodeHandle->get_parameter("transforms/require_all_reachable", this->requireAllFramesReachable);
-
   this->nodeHandle->get_parameter("bounding_sphere/publish_cut_out_pointcloud", this->publishNoBoundingSpherePointcloud);
-
   this->nodeHandle->get_parameter("bounding_box/publish_cut_out_pointcloud", this->publishNoBoundingBoxPointcloud);
-
   this->nodeHandle->get_parameter("oriented_bounding_box/publish_cut_out_pointcloud",
                                  this->publishNoOrientedBoundingBoxPointcloud);
-
   this->nodeHandle->get_parameter("local_bounding_box/publish_cut_out_pointcloud",
                                  this->publishNoLocalBoundingBoxPointcloud);
-
   this->nodeHandle->get_parameter("bounding_sphere/compute", this->computeBoundingSphere);
   this->computeBoundingSphere = this->computeBoundingSphere || this->publishNoBoundingSpherePointcloud;
-
   this->nodeHandle->get_parameter("bounding_box/compute", this->computeBoundingBox);
   this->computeBoundingBox = this->computeBoundingBox || this->publishNoBoundingBoxPointcloud;
-
   this->nodeHandle->get_parameter("oriented_bounding_box/compute", this->computeOrientedBoundingBox);
   this->computeOrientedBoundingBox = this->computeOrientedBoundingBox || this->publishNoOrientedBoundingBoxPointcloud;
-
   this->nodeHandle->get_parameter("local_bounding_box/compute", this->computeLocalBoundingBox);
   this->computeLocalBoundingBox = this->computeLocalBoundingBox || this->publishNoLocalBoundingBoxPointcloud;
-
   this->nodeHandle->get_parameter("bounding_sphere/debug", this->computeDebugBoundingSphere);
-
   this->nodeHandle->get_parameter("bounding_box/debug", this->computeDebugBoundingBox);
-
   this->nodeHandle->get_parameter("oriented_bounding_box/debug", this->computeDebugOrientedBoundingBox);
-
   this->nodeHandle->get_parameter("local_bounding_box/debug", this->computeDebugLocalBoundingBox);
-
   this->nodeHandle->get_parameter("bounding_sphere/marker", this->publishBoundingSphereMarker);
-
   this->nodeHandle->get_parameter("bounding_box/marker", this->publishBoundingBoxMarker);
-
   this->nodeHandle->get_parameter("oriented_bounding_box/marker", this->publishOrientedBoundingBoxMarker);
-
   this->nodeHandle->get_parameter("local_bounding_box/marker", this->publishLocalBoundingBoxMarker);
-
   this->nodeHandle->get_parameter_or("local_bounding_box/frame_id", this->localBoundingBoxFrame, this->fixedFrame);
-
   this->nodeHandle->get_parameter("debug/pcl/inside", this->publishDebugPclInside);
-
   this->nodeHandle->get_parameter("debug/pcl/clip", this->publishDebugPclClip);
-
   this->nodeHandle->get_parameter("debug/pcl/shadow", this->publishDebugPclShadow);
-
   this->nodeHandle->get_parameter("debug/marker/contains", this->publishDebugContainsMarker);
-
   this->nodeHandle->get_parameter("debug/marker/shadow", this->publishDebugShadowMarker);
-
   this->nodeHandle->get_parameter("debug/marker/bounding_sphere", this->publishDebugBsphereMarker);
-
   this->nodeHandle->get_parameter("debug/marker/bounding_box", this->publishDebugBboxMarker);
-
   double tempInflationPadding;
   this->nodeHandle->get_parameter("body_model/inflation/padding", tempInflationPadding);
   const double inflationPadding = tempInflationPadding;
-
   double tempInflationScale;
   this->nodeHandle->get_parameter("body_model/inflation/scale", tempInflationScale);
   const double inflationScale = tempInflationScale;
-
-  this->nodeHandle->get_parameter("body_model/inflation/contains_test/padding", this->defaultContainsInflation.padding);
-
-  this->nodeHandle->get_parameter("body_model/inflation/contains_test/scale", this->defaultContainsInflation.scale);
-
-  this->nodeHandle->get_parameter("body_model/inflation/shadow_test/padding", this->defaultShadowInflation.padding);
-
-  this->nodeHandle->get_parameter("body_model/inflation/shadow_test/scale", this->defaultShadowInflation.scale);
-
-  this->nodeHandle->get_parameter("body_model/inflation/bounding_sphere/padding", this->defaultBsphereInflation.padding);
-
-  this->nodeHandle->get_parameter("body_model/inflation/bounding_sphere/scale", this->defaultBsphereInflation.scale);
-
-  this->nodeHandle->get_parameter("body_model/inflation/bounding_box/padding", this->defaultBboxInflation.padding);
-
-  this->nodeHandle->get_parameter("body_model/inflation/bounding_box/scale", this->defaultBboxInflation.scale);
+  this->nodeHandle->get_parameter_or("body_model/inflation/contains_test/padding", this->defaultContainsInflation.padding, inflationPadding);
+  this->nodeHandle->get_parameter_or("body_model/inflation/contains_test/scale", this->defaultContainsInflation.scale, inflationScale);
+  this->nodeHandle->get_parameter_or("body_model/inflation/shadow_test/padding", this->defaultShadowInflation.padding, inflationPadding);
+  this->nodeHandle->get_parameter_or("body_model/inflation/shadow_test/scale", this->defaultShadowInflation.scale, inflationScale);
+  this->nodeHandle->get_parameter_or("body_model/inflation/bounding_sphere/padding", this->defaultBsphereInflation.padding, inflationPadding);
+  this->nodeHandle->get_parameter_or("body_model/inflation/bounding_sphere/scale", this->defaultBsphereInflation.scale, inflationScale);
+  this->nodeHandle->get_parameter_or("body_model/inflation/bounding_box/padding", this->defaultBboxInflation.padding, inflationPadding);
+  this->nodeHandle->get_parameter_or("body_model/inflation/bounding_box/scale", this->defaultBboxInflation.scale, inflationScale);
 
   // read per-link padding
   std::map<std::string, double> perLinkInflationPadding;
@@ -609,7 +569,7 @@ bool RobotBodyFilter<T>::configure() {
   } 
   else {
     if (this->linksIgnoredEverywhere.empty()) {
-      RCLCPP_INFO(nodeHandle->get_logger(),"RobotBodyFilter: Filtering applied to links %s.", to_string(this->onlyLinks).c_str());
+      // RCLCPP_INFO(nodeHandle->get_logger(),"RobotBodyFilter: Filtering applied to links %s.", to_string(this->onlyLinks).c_str());
     } 
     else {
     //TODO: The to_string call is crashing at runtime here, dont understand why
@@ -772,11 +732,11 @@ bool RobotBodyFilter<T>::computeMask(
   this->publishDebugMarkers(scanTime);
   this->computeAndPublishBoundingSphere(projectedPointCloud);
   this->computeAndPublishBoundingBox(projectedPointCloud);
-  RCLCPP_INFO(nodeHandle->get_logger(), "computed and published bounding box");
+  RCLCPP_DEBUG(nodeHandle->get_logger(), "computed and published bounding box");
   // this->computeAndPublishOrientedBoundingBox(projectedPointCloud);
-  RCLCPP_INFO(nodeHandle->get_logger(), "computed and published oriented bounding box");
+  RCLCPP_DEBUG(nodeHandle->get_logger(), "computed and published oriented bounding box");
   // this->computeAndPublishLocalBoundingBox(projectedPointCloud);
-  RCLCPP_INFO(nodeHandle->get_logger(), "computed and published local bounding box");
+  RCLCPP_DEBUG(nodeHandle->get_logger(), "computed and published local bounding box");
 
   RCLCPP_DEBUG(nodeHandle->get_logger(), "RobotBodyFilter: Filtering run time is %.5f secs.",
                double(clock() - stopwatchOverall) / CLOCKS_PER_SEC);
@@ -1134,8 +1094,6 @@ bool RobotBodyFilterPointCloud2::update(const sensor_msgs::msg::PointCloud2& inp
 
     transformWithChannels(tmpCloud, filteredCloud, *this->tfBuffer, this->outputFrame, this->channelsToTransform);
   }
-
-  RCLCPP_INFO(nodeHandle->get_logger(), "Successfully updated");
 
   return true;
 }
