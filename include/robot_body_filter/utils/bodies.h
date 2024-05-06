@@ -17,7 +17,7 @@ namespace bodies
 {
 
 typedef bodies::AABB AxisAlignedBoundingBox;
-typedef bodies::OBB OrientedBoundingBox;
+// typedef bodies::OBB OrientedBoundingBox;
 
 /** \brief Compute AABB for the body at different pose. Can't use setPose() because we want `body` to be const. */
 void computeBoundingBoxAt(const bodies::Body* body, AxisAlignedBoundingBox& bbox, const Eigen::Isometry3d& pose);
