@@ -1990,10 +1990,10 @@ void RobotBodyFilter<T>::robotDescriptionUpdated(const std_msgs::msg::String::Sh
 template <typename T>
 bool RobotBodyFilter<T>::triggerModelReload(std_srvs::srv::Trigger_Request&, std_srvs::srv::Trigger_Response&) {
   std::string urdf;
-  auto success = this->nodeHandle->getParam(this->robotDescriptionParam, urdf);
+  auto success = this->nodeHandle->get_parameter(this->robotDescriptionParam, urdf);
 
   if (!success) {
-    ROS_ERROR_STREAM("RobotBodyFilter: Parameter " << this->robotDescriptionParam << " doesn't exist.");
+    RCLCPP_ERROR(nodeHandle->get_logger(), "RobotBodyFilter: Parameter %s doesn't exist.", this->robotDescriptionParam.c_str());
     return false;
   }
 
