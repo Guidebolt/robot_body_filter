@@ -70,7 +70,7 @@ void TFFramesWatchdog::searchForReachableFrames()
     RCLCPP_DEBUG(this->nodeHandle->get_logger(), "robot frame: %s, checking against: %s" , this->robotFrame.c_str(), frame.c_str());
     if (this->tfBuffer->canTransform(this->robotFrame, frame, time, this->unreachableTfLookupTimeout, &err)) {
       this->markReachable(frame);
-      RCLCPP_DEBUG(this->nodeHandle->get_logger(),"TFFramesWatchdog (%s): Frame %s became reachable at %i.%i",
+      RCLCPP_DEBUG(this->nodeHandle->get_logger(),"TFFramesWatchdog (%s): Frame %s became reachable at %f.%li",
           this->robotFrame.c_str(), frame.c_str(), time.seconds(), time.nanoseconds());
     } else {
       auto &clk = *nodeHandle->get_clock();

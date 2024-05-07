@@ -163,7 +163,7 @@ void RayCastingShapeMask::updateBodyPosesNoLock()
     else
     {
       if (containsBody == nullptr){
-        RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape with handle %s without a body", containsHandle);
+        RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape with handle %u without a body", containsHandle);
     }
       else {
         std::string name;
@@ -172,11 +172,11 @@ void RayCastingShapeMask::updateBodyPosesNoLock()
 
         if (name.empty())
         {
-          RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape %s with handle %s", containsBody->getType(), containsHandle);
+          RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape %u with handle %u", containsBody->getType(), containsHandle);
         }
         else
         {
-          RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape %s (%s)", name.c_str(), containsBody->getType());
+          RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"),"shape_mask Missing transform for shape %s (%u)", name.c_str(), containsBody->getType());
         }
       }
     }
