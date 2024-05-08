@@ -81,6 +81,7 @@ void RobotBodyFilter<T>::DeclareParameters(){
   this->nodeHandle->declare_parameter("transforms/timeout/unreachable", 0.2, param_desc);
   this->nodeHandle->declare_parameter("transforms/require_all_reachable", false);
   this->nodeHandle->declare_parameter("bounding_sphere/publish_cut_out_pointcloud", false);
+  this->nodeHandle->declare_parameter("labeling/publish_labeled_point_cloud", true);
   this->nodeHandle->declare_parameter("bounding_box/publish_cut_out_pointcloud", false);
   this->nodeHandle->declare_parameter("oriented_bounding_box/publish_cut_out_pointcloud", false);
   this->nodeHandle->declare_parameter("local_bounding_box/publish_cut_out_pointcloud", false);
@@ -233,6 +234,7 @@ bool RobotBodyFilter<T>::configure() {
   this->nodeHandle->get_parameter_or("body_model/inflation/bounding_sphere/scale", this->defaultBsphereInflation.scale, inflationScale);
   this->nodeHandle->get_parameter_or("body_model/inflation/bounding_box/padding", this->defaultBboxInflation.padding, inflationPadding);
   this->nodeHandle->get_parameter_or("body_model/inflation/bounding_box/scale", this->defaultBboxInflation.scale, inflationScale);
+  this->nodeHandle->get_parameter("labeling/publish_labeled_point_cloud", this->publishLabeledPointCloud);
 
   // read per-link padding
   std::map<std::string, double> perLinkInflationPadding;
@@ -484,6 +486,12 @@ bool RobotBodyFilter<T>::configure() {
     100);
   }
 
+  if (this->publishLabeledPointCloud) {
+    this->labeledPointCloudPublisher = this->nodeHandle->template
+    create_publisher<sensor_msgs::msg::PointCloud2>("labeled_point_cloud",
+    100);
+  }
+
   // initialize the 3D body masking tool
   auto getShapeTransformCallback =
   std::bind(&RobotBodyFilter::getShapeTransform, this,
@@ -725,6 +733,7 @@ bool RobotBodyFilter<T>::computeMask(
                double(clock() - stopwatchOverall) / CLOCKS_PER_SEC);
 
   this->publishDebugPointClouds(projectedPointCloud, pointMask);
+  this->publishLabeledPointClouds(projectedPointCloud, pointMask);
   this->publishDebugMarkers(scanTime);
   this->computeAndPublishBoundingSphere(projectedPointCloud);
   this->computeAndPublishBoundingBox(projectedPointCloud);
@@ -1442,6 +1451,16 @@ void RobotBodyFilter<T>::publishDebugPointClouds(const sensor_msgs::msg::PointCl
     CREATE_FILTERED_CLOUD(projectedPointCloud, shadowCloud, this->keepCloudsOrganized,
                           (pointMask[i] == RayCastingShapeMask::MaskValue::SHADOW));
     this->debugPointCloudShadowPublisher->publish(shadowCloud);
+  }
+}
+
+template <typename T>
+void RobotBodyFilter<T>::publishLabeledPointClouds(const sensor_msgs::msg::PointCloud2& projectedPointCloud,
+                                                 const std::vector<RayCastingShapeMask::MaskValue>& pointMask) const {
+  if (this->publishLabeledPointCloud) {
+    sensor_msgs::msg::PointCloud2 insideCloud;
+    CREATE_LABELED_CLOUD(projectedPointCloud, insideCloud, this->keepCloudsOrganized);
+    this->labeledPointCloudPublisher->publish(insideCloud);
   }
 }
 

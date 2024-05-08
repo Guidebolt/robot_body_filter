@@ -79,7 +79,7 @@ install(TARGETS ${PROJECT_NAME} TFFramesWatchdog RayCastingShapeMask tf2_sensor_
 install(FILES rviz/debug.rviz
   DESTINATION share/rviz)
 
-if (BUILD_TESTING) 
+if (BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
   ament_add_gtest(test_set_utils test/test_set_utils.cpp)

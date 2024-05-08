@@ -256,6 +256,7 @@ protected:
   //! Publisher of scan_point_cloud with robot bounding sphere cut out.
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scanPointCloudNoBoundingSpherePublisher;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr debugPointCloudInsidePublisher;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr labeledPointCloudPublisher;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr debugPointCloudClipPublisher;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr debugPointCloudShadowPublisher;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr debugContainsMarkerPublisher;
@@ -309,6 +310,7 @@ protected:
   bool publishDebugShadowMarker;
   bool publishDebugBsphereMarker;
   bool publishDebugBboxMarker;
+  bool publishLabeledPointCloud;
 
   //! Timeout for reachable transforms.
   rclcpp::Duration reachableTransformTimeout;
@@ -424,6 +426,9 @@ protected:
 
   void publishDebugMarkers(const rclcpp::Time& scanTime) const;
   void publishDebugPointClouds(
+      const sensor_msgs::msg::PointCloud2& projectedPointCloud,
+      const std::vector<RayCastingShapeMask::MaskValue>& pointMask) const;
+  void publishLabeledPointClouds(
       const sensor_msgs::msg::PointCloud2& projectedPointCloud,
       const std::vector<RayCastingShapeMask::MaskValue>& pointMask) const;
   /**
