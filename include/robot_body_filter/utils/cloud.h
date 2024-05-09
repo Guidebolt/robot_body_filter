@@ -122,25 +122,19 @@ size_t num_points(const Cloud &cloud);
   \
   const auto numPoints = ::robot_body_filter::num_points(IN_LABEL); \
   \
-  if (!outIsOrganized) { \
-    for (size_t i = 0; i < numPoints; ++i, ++x_it, ++y_it, ++z_it) { \
-        size_t from = (i / IN_LABEL.width) * IN_LABEL.row_step + (i % IN_LABEL.width) * IN_LABEL.point_step; \
-        size_t to = from + IN_LABEL.point_step; \
-        OUT_LABEL.data.insert(OUT_LABEL.data.end(), IN_LABEL.data.begin() + from, \
-                        IN_LABEL.data.begin() + to); \
-        if ((pointMask[i] == RayCastingShapeMask::MaskValue::OUTSIDE)) { \
-            OUT_LABEL.data.push_back(0); \
-        } else { \
-            OUT_LABEL.data.push_back(1); \
-        } \
-        OUT_LABEL.width++; \
-    } \
-    OUT_LABEL.is_dense = true; \
-  } else { \
-    RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"), "organized cloud labeling not supported"); \
-  }\
-  \
-  OUT_LABEL.row_step = OUT_LABEL.width * OUT_LABEL.point_step;\
+  for (size_t i = 0; i < numPoints; ++i, ++x_it, ++y_it, ++z_it) { \
+      size_t from = (i / IN_LABEL.width) * IN_LABEL.row_step + (i % IN_LABEL.width) * IN_LABEL.point_step; \
+      size_t to = from + IN_LABEL.point_step; \
+      OUT_LABEL.data.insert(OUT_LABEL.data.end(), IN_LABEL.data.begin() + from, \
+                      IN_LABEL.data.begin() + to); \
+      if ((pointMask[i] == RayCastingShapeMask::MaskValue::OUTSIDE)) { \
+          OUT_LABEL.data.push_back(0); \
+      } else { \
+          OUT_LABEL.data.push_back(1); \
+      } \
+      OUT_LABEL.width++; \
+  } \
+  OUT_LABEL.is_dense = true; \
 }
 
 /**
