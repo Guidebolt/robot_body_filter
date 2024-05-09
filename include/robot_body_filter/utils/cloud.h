@@ -96,6 +96,47 @@ size_t num_points(const Cloud &cloud);
   OUT.row_step = OUT.width * OUT.point_step;\
 }
 
+// LABEL INSTEAD OF REMOVE
+#define CREATE_LABELED_CLOUD(IN_LABEL, OUT_LABEL, KEEP_ORGANIZED_LABEL) {\
+  const auto inputIsOrganized = IN_LABEL.height > 1; \
+  const auto outIsOrganized = KEEP_ORGANIZED_LABEL && inputIsOrganized; \
+  \
+  OUT_LABEL.header = IN_LABEL.header; \
+  OUT_LABEL.fields = IN_LABEL.fields; \
+  auto newField = sensor_msgs::msg::PointField(); \
+  newField.name = "label"; \
+  newField.offset = IN_LABEL.fields.back().offset + IN_LABEL.fields.back().count * sizeOfPointField(IN_LABEL.fields.back()); \
+  newField.datatype = sensor_msgs::msg::PointField::UINT8; \
+  newField.count = 1; \
+  OUT_LABEL.fields.push_back(newField); \
+  OUT_LABEL.point_step = IN_LABEL.point_step + 1; \
+  OUT_LABEL.height = outIsOrganized ? IN_LABEL.height : 1; \
+  OUT_LABEL.width = outIsOrganized ? IN_LABEL.width : 0; \
+  \
+  OUT_LABEL.data.resize(0); \
+  OUT_LABEL.data.reserve(IN_LABEL.data.size()); \
+  \
+  ::robot_body_filter::CloudConstIter x_it(IN_LABEL, "x"); \
+  ::robot_body_filter::CloudConstIter y_it(IN_LABEL, "y"); \
+  ::robot_body_filter::CloudConstIter z_it(IN_LABEL, "z"); \
+  \
+  const auto numPoints = ::robot_body_filter::num_points(IN_LABEL); \
+  \
+  for (size_t i = 0; i < numPoints; ++i, ++x_it, ++y_it, ++z_it) { \
+      size_t from = (i / IN_LABEL.width) * IN_LABEL.row_step + (i % IN_LABEL.width) * IN_LABEL.point_step; \
+      size_t to = from + IN_LABEL.point_step; \
+      OUT_LABEL.data.insert(OUT_LABEL.data.end(), IN_LABEL.data.begin() + from, \
+                      IN_LABEL.data.begin() + to); \
+      if ((pointMask[i] == RayCastingShapeMask::MaskValue::OUTSIDE)) { \
+          OUT_LABEL.data.push_back(0); \
+      } else { \
+          OUT_LABEL.data.push_back(1); \
+      } \
+      OUT_LABEL.width++; \
+  } \
+  OUT_LABEL.is_dense = true; \
+}
+
 /**
  * Return true if the cloud contains a field with the given name.
  * @param cloud The cloud to search.
