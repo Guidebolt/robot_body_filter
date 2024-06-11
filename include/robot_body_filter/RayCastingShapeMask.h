@@ -351,6 +351,12 @@ protected:
       MaskValue &mask,
       const Eigen::Vector3d& sensorPos);
 
+  void classifyPoints(std::vector<RayCastingShapeMask::MaskValue> &mask, const size_t np,
+                             CloudConstIter &iter_x, CloudConstIter &iter_y, CloudConstIter &iter_z, const Eigen::Vector3d sensorPos, const size_t sp);
+
+  void SegmentClassification(std::vector<RayCastingShapeMask::MaskValue> &mask, const size_t np,
+                                                CloudConstIter &iter_x, CloudConstIter &iter_y, CloudConstIter &iter_z, const Eigen::Vector3d sensorPos, const size_t threads);
+
   /**
    * \brief Get the bounding sphere containing all registered shapes.
    * \return The bounding sphere of the mask.
