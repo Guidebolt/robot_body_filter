@@ -81,6 +81,13 @@ void transformChannel(const sensor_msgs::msg::PointCloud2& cloudIn, sensor_msgs:
   switch (type)
   {
     case CloudChannelType::POINT: {
+      #pragma #pragma omp parallel for schedule(dynamic) num_threads(8)
+      for (size_t i = 0; i < np; ++i) {
+        point = t * Eigen::Vector3f(*(x_in + i), *(y_in + i), *(z_in + i));  // apply the whole transform
+        *(x_out + i) = point.x();
+        *(y_out + i) = point.y();
+        *(z_out + i) = point.z();
+      }
       // for (; x_in != x_in.end(); ++x_in, ++y_in, ++z_in, ++x_out, ++y_out, ++z_out) {
       //   point = t * Eigen::Vector3f(*x_in, *y_in, *z_in);  // apply the whole transform
       //   *x_out = point.x();

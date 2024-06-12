@@ -15,6 +15,8 @@
 
 #include <geometric_shapes/body_operations.h>
 
+#include <omp.h>
+
 // #include <ros/console.h>
 
 namespace robot_body_filter
@@ -266,14 +268,13 @@ void RayCastingShapeMask::maskContainmentAndShadows(
 
   // Cloud iterators are not incremented in the for loop, because of the pragma
   // Comment out below parallelization as it can result in very high CPU consumption
-  // for (size_t i = 0; i < np; ++i)
-  // {
-  //   const Eigen::Vector3d pt(static_cast<double>(*(iter_x + i)),
-  //                            static_cast<double>(*(iter_y + i)),
-  //                            static_cast<double>(*(iter_z + i)));
-  //   this->classifyPointNoLock(pt, mask[i], sensorPos);
-  // }
-  this->SegmentClassification(mask, np, iter_x, iter_y, iter_z, sensorPos, 16);
+  #pragma #pragma omp parallel for schedule(dynamic) num_threads(8)
+  for (size_t i = 0; i < np; ++i)
+  {
+    const Eigen::Vector3d pt(static_cast<double>(*(iter_x + i)),
+                             static_cast<double>(*(iter_y + i)),
+                             static_cast<double>(*(iter_z + i)));
+    this->classifyPointNoLock(pt, mask[i], sensorPos);
 }
 
 void RayCastingShapeMask::maskContainmentAndShadows(const Eigen::Vector3f& data,
