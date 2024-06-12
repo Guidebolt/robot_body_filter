@@ -225,31 +225,6 @@ void RayCastingShapeMask::updateBodyPosesNoLock()
                                this->data->boundingSphereForContainsTest);
 }
 
-void RayCastingShapeMask::classifyPoints(std::vector<RayCastingShapeMask::MaskValue> &mask, const size_t np,
-                                                CloudConstIter &iter_x, CloudConstIter &iter_y, CloudConstIter &iter_z, const Eigen::Vector3d sensorPos, const size_t sp){
-    for (size_t i = sp; i < np; ++i)
-  {
-    const Eigen::Vector3d pt(static_cast<double>(*(iter_x + i)),
-                             static_cast<double>(*(iter_y + i)),
-                             static_cast<double>(*(iter_z + i)));
-    this->classifyPointNoLock(pt, mask[i], sensorPos);
-  }
-}
-
-void RayCastingShapeMask::SegmentClassification(std::vector<RayCastingShapeMask::MaskValue>& mask, const size_t np,
-                                                CloudConstIter& iter_x, CloudConstIter& iter_y, CloudConstIter& iter_z,
-                                                const Eigen::Vector3d sensorPos, const size_t threads) {
-  //Given a number of points and a number of threads, this function will divide the points into segments
-  static boost::asio::thread_pool pool(threads);
-  for (size_t i = 0; i < threads; ++i) {
-    size_t sp = i * np / threads;
-    size_t ep = (i + 1) * np / threads;
-    boost::asio::post(pool, std::bind(&RayCastingShapeMask::classifyPoints, this, std::ref(mask), np, std::ref(iter_x),
-                                      std::ref(iter_y), std::ref(iter_z), sensorPos, threads));
-  }
-  pool.join();
-}
-
 void RayCastingShapeMask::maskContainmentAndShadows(
     const Cloud& data, std::vector<RayCastingShapeMask::MaskValue>& mask,
     const Eigen::Vector3d& sensorPos)

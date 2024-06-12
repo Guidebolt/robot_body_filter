@@ -34,31 +34,6 @@ bool fieldNameMatchesChannel(const std::string& fieldName, const std::string& ch
   }
 }
 
-void ApplyTransform(CloudConstIter& x_in, CloudConstIter& y_in, CloudConstIter& z_in, CloudIter& x_out,
-                    CloudIter& y_out, CloudIter& z_out, const Eigen::Isometry3f& t, size_t sp, size_t ep) {
-  Eigen::Vector3f point;
-  for (size_t i = sp; i < ep; ++i) {
-    point = t * Eigen::Vector3f(*(x_in + i), *(y_in + i), *(z_in + i));  // apply the whole transform
-    *(x_out + i) = point.x();
-    *(y_out + i) = point.y();
-    *(z_out + i) = point.z();
-  }
-}
-
-void SegmentTransform(size_t np, size_t threads, CloudConstIter& x_in, CloudConstIter& y_in, CloudConstIter& z_in,
-                      CloudIter& x_out, CloudIter& y_out, CloudIter& z_out, const Eigen::Isometry3f& t) {
-  //Given a number of points and a number of threads, this function will divide the points into segments
-  //Making this threadpool static is causing issues with the transform?
-  boost::asio::thread_pool pool(threads);
-  for (size_t i = 0; i < threads; ++i) {
-    size_t sp = i * np / threads;
-    size_t ep = (i + 1) * np / threads;
-    boost::asio::post(pool, std::bind(ApplyTransform, std::ref(x_in), std::ref(y_in), std::ref(z_in), std::ref(x_out),
-                                      std::ref(y_out), std::ref(z_out), std::ref(t), sp, ep));
-  }
-  pool.join();
-}
-
 void transformChannel(const sensor_msgs::msg::PointCloud2& cloudIn, sensor_msgs::msg::PointCloud2& cloudOut,
                       const Eigen::Isometry3f& t, const std::string& channelPrefix, const CloudChannelType type)
 {
@@ -81,6 +56,7 @@ void transformChannel(const sensor_msgs::msg::PointCloud2& cloudIn, sensor_msgs:
   switch (type)
   {
     case CloudChannelType::POINT: {
+      // High CPU usage comment out below line for single threaded operation
       #pragma #pragma omp parallel for schedule(dynamic) num_threads(8)
       for (size_t i = 0; i < np; ++i) {
         point = t * Eigen::Vector3f(*(x_in + i), *(y_in + i), *(z_in + i));  // apply the whole transform
@@ -88,13 +64,6 @@ void transformChannel(const sensor_msgs::msg::PointCloud2& cloudIn, sensor_msgs:
         *(y_out + i) = point.y();
         *(z_out + i) = point.z();
       }
-      // for (; x_in != x_in.end(); ++x_in, ++y_in, ++z_in, ++x_out, ++y_out, ++z_out) {
-      //   point = t * Eigen::Vector3f(*x_in, *y_in, *z_in);  // apply the whole transform
-      //   *x_out = point.x();
-      //   *y_out = point.y();
-      //   *z_out = point.z();
-      // }
-      SegmentTransform(np, 16, std::ref(x_in), std::ref(y_in), std::ref(z_in), std::ref(x_out), std::ref(y_out), std::ref(z_out), t);
       break;
     }
     case CloudChannelType::DIRECTION:
@@ -105,7 +74,6 @@ void transformChannel(const sensor_msgs::msg::PointCloud2& cloudIn, sensor_msgs:
         *y_out = point.y();
         *z_out = point.z();
       }
-      RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"), "break");
       break;
     case CloudChannelType::SCALAR:
     //TODO: ADD WARNING FOR NOT SUPPORTED
