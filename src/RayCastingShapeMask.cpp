@@ -275,6 +275,7 @@ void RayCastingShapeMask::maskContainmentAndShadows(
                              static_cast<double>(*(iter_y + i)),
                              static_cast<double>(*(iter_z + i)));
     this->classifyPointNoLock(pt, mask[i], sensorPos);
+  }
 }
 
 void RayCastingShapeMask::maskContainmentAndShadows(const Eigen::Vector3f& data,
