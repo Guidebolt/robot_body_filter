@@ -9,6 +9,8 @@
 
 #include <unordered_set>
 
+#include <boost/asio.hpp>
+
 namespace robot_body_filter {
 
 const static std::unordered_map<std::string, CloudChannelType> XYZ_CHANNELS({
@@ -48,18 +50,22 @@ void transformChannel(const sensor_msgs::msg::PointCloud2& cloudIn, sensor_msgs:
   CloudIter z_out(cloudOut, channelPrefix + "z");
 
   Eigen::Vector3f point;
+  size_t np = num_points(cloudIn);
+
   // the switch has to be outside the for loop for performance reasons
   switch (type)
   {
-    case CloudChannelType::POINT:
-      for (; x_in != x_in.end(); ++x_in, ++y_in, ++z_in, ++x_out, ++y_out, ++z_out)
-      {
-        point = t * Eigen::Vector3f(*x_in, *y_in, *z_in);  // apply the whole transform
-        *x_out = point.x();
-        *y_out = point.y();
-        *z_out = point.z();
+    case CloudChannelType::POINT: {
+      // High CPU usage comment out below line for single threaded operation
+      #pragma #pragma omp parallel for schedule(dynamic) num_threads(8)
+      for (size_t i = 0; i < np; ++i) {
+        point = t * Eigen::Vector3f(*(x_in + i), *(y_in + i), *(z_in + i));  // apply the whole transform
+        *(x_out + i) = point.x();
+        *(y_out + i) = point.y();
+        *(z_out + i) = point.z();
       }
       break;
+    }
     case CloudChannelType::DIRECTION:
       for (; x_out != x_out.end(); ++x_in, ++y_in, ++z_in, ++x_out, ++y_out, ++z_out)
       {
@@ -68,7 +74,6 @@ void transformChannel(const sensor_msgs::msg::PointCloud2& cloudIn, sensor_msgs:
         *y_out = point.y();
         *z_out = point.z();
       }
-      RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"), "break");
       break;
     case CloudChannelType::SCALAR:
     //TODO: ADD WARNING FOR NOT SUPPORTED
