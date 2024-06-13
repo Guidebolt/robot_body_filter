@@ -126,7 +126,7 @@ inline std::string to_string(const std::vector<T> &value)
 }
 
 template<typename T>
-inline std::string to_string(const std::set<T> &value)
+inline std::string to_string(std::set<T> &value)
 {
   std::stringstream ss;
   ss << "[";
@@ -142,7 +142,8 @@ inline std::string to_string(const std::set<T> &value)
     ++i;
   }
   ss << "]";
-  return ss.str();
+  auto string = ss.str();
+  return string;
 }
 
 template<typename K, typename V>

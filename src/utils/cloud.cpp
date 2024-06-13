@@ -2,7 +2,7 @@
 #define private protected
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #undef private
-
+#include <cstring>
 #include <robot_body_filter/utils/cloud.h>
 
 namespace robot_body_filter

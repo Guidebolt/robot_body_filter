@@ -8,6 +8,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 // #include <robot_body_filter/utils/filter_utils.hpp>
+// #include <robot_body_filter/robot_body_filter/msg/oriented_bounding_box_stamped.hpp>
 #include <robot_body_filter/utils/tf2_sensor_msgs.h>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <robot_body_filter/RayCastingShapeMask.h>
@@ -100,9 +101,10 @@ class RobotBodyFilter : public filters::FilterBase<T> {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  RobotBodyFilter();
+  RobotBodyFilter(std::shared_ptr<rclcpp::Node> inputNode = std::make_shared<rclcpp::Node>("robot_body_filter"));
   ~RobotBodyFilter() override;
 
+  void DeclareParameters();
   //! Read config parameters loaded by FilterBase::configure(string, NodeHandle)
   //! Parameters are described in the readme.
   bool configure() override;
@@ -204,7 +206,9 @@ protected:
   std::string robotDescriptionParam;
 
   //! Subscriber for robot_description updates.
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr robotDescriptionUpdatesListener;
+  std::shared_ptr<rclcpp::AsyncParametersClient> robotDescriptionUpdatesListener;
+  // Callback group for dynamic updates
+  rclcpp::CallbackGroup::SharedPtr AsyncCallbackGroup;
 
   //! Name of the field in the dynamic reconfigure message that contains robot model.
   std::string robotDescriptionUpdatesFieldName;
@@ -322,7 +326,7 @@ protected:
   //! tf client
   std::shared_ptr<tf2_ros::Buffer> tfBuffer;
   //! tf listener
-  std::unique_ptr<tf2_ros::TransformListener> tfListener;
+  std::shared_ptr<tf2_ros::TransformListener> tfListener;
 
   //! Watchdog for unreachable frames.
   std::shared_ptr<TFFramesWatchdog> tfFramesWatchdog;
@@ -462,6 +466,7 @@ private:
 class RobotBodyFilterLaserScan : public RobotBodyFilter<sensor_msgs::msg::LaserScan>
 {
 public:
+  void DeclareParameters();
   //! Apply the filter.
   bool update(const sensor_msgs::msg::LaserScan& inputScan, sensor_msgs::msg::LaserScan& filteredScan) override;
 
@@ -477,6 +482,7 @@ protected:
 class RobotBodyFilterPointCloud2 : public RobotBodyFilter<sensor_msgs::msg::PointCloud2>
 {
 public:
+  void DeclareParameters();
   //! Apply the filter.
   bool update(const sensor_msgs::msg::PointCloud2& inputCloud, sensor_msgs::msg::PointCloud2& filteredCloud) override;
 

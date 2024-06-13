@@ -3,7 +3,7 @@
 #include <robot_body_filter/utils/cloud.h>
 #include <robot_body_filter/utils/string_utils.hpp>
 
-#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 #include <Eigen/Geometry>  // needs to be implementation-private as we want -march=native optimizations
 
@@ -37,10 +37,8 @@ void transformChannel(const sensor_msgs::msg::PointCloud2& cloudIn, sensor_msgs:
 {
   if (num_points(cloudIn) == 0)
     return;
-
   if (type == CloudChannelType::SCALAR)
     return;
-
   CloudConstIter x_in(cloudIn, channelPrefix + "x");
   CloudConstIter y_in(cloudIn, channelPrefix + "y");
   CloudConstIter z_in(cloudIn, channelPrefix + "z");
@@ -70,6 +68,10 @@ void transformChannel(const sensor_msgs::msg::PointCloud2& cloudIn, sensor_msgs:
         *y_out = point.y();
         *z_out = point.z();
       }
+      RCLCPP_ERROR(rclcpp::get_logger("robot_body_filter"), "break");
+      break;
+    case CloudChannelType::SCALAR:
+    //TODO: ADD WARNING FOR NOT SUPPORTED
       break;
   }
 }
@@ -102,15 +104,14 @@ sensor_msgs::msg::PointCloud2& transformWithChannels(
     }
   }
 
+
   out = in;
   out.header = tf.header;
 
   const auto t = tf2::transformToEigen(tf).cast<float>();
-
   transformChannel(in, out, t, "", CloudChannelType::POINT);
   for (const auto& channel : channelsPresent)
     transformChannel(in, out, t, channel, channels.at(channel));
-
   return out;
 }
 
