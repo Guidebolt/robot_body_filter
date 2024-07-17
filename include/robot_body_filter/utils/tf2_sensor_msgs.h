@@ -3,7 +3,7 @@
 
 #include <unordered_map>
 #include <tf2_ros/buffer.h>
-#include <tf2_sensor_msgs/tf2_sensor_msgs/tf2_sensor_msgs.hpp>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.hpp>
 
 namespace robot_body_filter
 {
